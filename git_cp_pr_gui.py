@@ -394,7 +394,7 @@ class CommitPicker(tk.Tk):
             return
         if self.dry_run.get():
             confirmation_message = (
-                "This will create the cherry-pick branch only. It will not cherry-pick commits or push anything.\n\n"
+                "This will create the cherry-pick branch and apply the selected commits. It will not push anything.\n\n"
                 "The new branch will remain available, and you will return to the original branch. Continue?"
             )
         else:

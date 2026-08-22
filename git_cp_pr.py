@@ -7,7 +7,7 @@ import sys
 import time
 from typing import List, Dict, Tuple
 
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 class Color:
     # Use ANSI codes, checking if terminal supports color (enabled by default)
@@ -146,7 +146,7 @@ def main():
     parser.add_argument("--mode", choices=["gh", "md"], help="Force PR creation mode: 'gh' (GitHub CLI) or 'md' (Markdown file)")
     parser.add_argument("--draft", action="store_true", help="Create the pull request as a draft")
     parser.add_argument("-e", "--editor", "--edit", action="store_true", help="Open an editor to edit the PR title and body before GitHub CLI submission")
-    parser.add_argument("--dry-run", action="store_true", help="Create the cherry-pick branch only; do not cherry-pick or push")
+    parser.add_argument("--dry-run", action="store_true", help="Apply commits to the cherry-pick branch without pushing or creating a PR")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args()
@@ -223,11 +223,6 @@ def main():
     branch_created = True
     remove_branch_on_exit = True
 
-    if args.dry_run:
-        remove_branch_on_exit = False
-        print_status("🧪", f"Dry run complete. Branch '{custom_branch}' was created; no commits were cherry-picked or pushed.", Color.GREEN)
-        return
-
     print_status("🍒", f"Cherry-picking {len(expanded_commits)} commit(s)...")
     cp_cmd = ["git", "cherry-pick"] + args.commits
     cp_result = subprocess.run(cp_cmd)
@@ -236,6 +231,10 @@ def main():
         sys.exit(1)
 
     remove_branch_on_exit = False
+
+    if args.dry_run:
+        print_status("🧪", f"Dry run complete. Commits were applied to branch '{custom_branch}', but nothing was pushed.", Color.GREEN)
+        return
 
     print_status("🚀", "Pushing branch to remote origin...")
     run_command(f"git push -u origin {custom_branch}")

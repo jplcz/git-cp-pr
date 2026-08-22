@@ -15,7 +15,7 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
   - Choice between direct GitHub PR creation (`gh`) or generating a structured `.md` file.
   - Creates draft pull requests with `--draft`.
   - Opens the configured editor before GitHub CLI submission with `--editor` (or `--edit`).
-  - Creates the cherry-pick branch only, without cherry-picking or pushing, with `--dry-run`.
+  - Applies commits to the cherry-pick branch without pushing or creating a PR, with `--dry-run`.
 
 ## Prerequisites
 
@@ -187,7 +187,7 @@ Create a draft pull request and edit its title and body before submitting:
 git-cp-pr --draft --editor abc1234
 ```
 
-Create the cherry-pick branch without applying commits or pushing it:
+Apply commits to the cherry-pick branch without pushing it or creating a PR:
 
 ```bash
 git-cp-pr --dry-run abc1234
