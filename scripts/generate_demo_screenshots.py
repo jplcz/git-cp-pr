@@ -112,6 +112,20 @@ def generate(output_dir: Path, keep_repo: bool) -> None:
     try:
         DemoRepository(demo_path).create()
         original_directory = Path.cwd()
+        previous_env = {
+            "LANG": os.environ.get("LANG"),
+            "LC_ALL": os.environ.get("LC_ALL"),
+            "LC_MESSAGES": os.environ.get("LC_MESSAGES"),
+            "LANGUAGE": os.environ.get("LANGUAGE"),
+            "XDG_CONFIG_HOME": os.environ.get("XDG_CONFIG_HOME"),
+        }
+        os.environ["LANG"] = "en_US.UTF-8"
+        os.environ["LC_ALL"] = "en_US.UTF-8"
+        os.environ["LC_MESSAGES"] = "en_US.UTF-8"
+        os.environ["LANGUAGE"] = "en_US:en"
+        isolated_config = demo_path / ".config"
+        isolated_config.mkdir(parents=True, exist_ok=True)
+        os.environ["XDG_CONFIG_HOME"] = str(isolated_config)
         os.chdir(demo_path)
         try:
             app = CommitPicker()
@@ -128,6 +142,11 @@ def generate(output_dir: Path, keep_repo: bool) -> None:
             app.mainloop()
         finally:
             os.chdir(original_directory)
+            for key, value in previous_env.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
         if keep_repo:
             retained_path = output_dir / "demo-repository"
