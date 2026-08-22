@@ -21,6 +21,7 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
 - Python 3.6+
 - Git
 - [GitHub CLI (`gh`)](https://cli.github.com/) (Optional, used for direct PR creation)
+- Tkinter (required only for the optional GUI; on Ubuntu/Debian install `python3-tk`)
 
 ## Installation
 
@@ -103,6 +104,20 @@ install the updated project:
 ```bash
 python -m pip install --upgrade -e .
 ```
+
+## Graphical Interface
+
+The optional cross-platform Tkinter frontend displays the Git commit graph and
+allows commits to be selected with checkboxes before running the normal CLI
+workflow:
+
+```bash
+git-cp-pr-gui
+```
+
+The GUI exposes the base branch, custom branch name, base update, PR mode,
+draft, and editor options. It invokes `git-cp-pr`'s existing Python workflow,
+so command-line and GUI behavior remain consistent.
 
 ## Examples
 
