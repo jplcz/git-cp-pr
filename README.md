@@ -22,7 +22,7 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
 
 ## Installation
 
-1. Copy the `git-cp-pr.py` script into your project root or a directory in your `$PATH`.
+1. Copy the `git_cp_pr.py` script into your project root or a directory in your `$PATH`.
 2. Ensure it is executable:
    ```bash
-   chmod +x git-cp-pr.py
+   chmod +x git_cp_pr.py
