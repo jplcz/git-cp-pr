@@ -34,6 +34,13 @@ Alternatively, you can install it locally using `pip`:
 python3 -m pip install --user .
 ```
 
+Or you can use the provided automated installation script:
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
 Or you can use:
 
 1. Copy the `git_cp_pr.py` script somewhere into your `$PATH`.
