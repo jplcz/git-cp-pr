@@ -125,6 +125,9 @@ checked-out branch; enable **All branches** to include every branch. It invokes
 `git-cp-pr`'s existing Python workflow, so command-line and GUI behavior remain
 consistent.
 
+The PR base target defaults to `master` when present, otherwise `main`, and is
+independent from the displayed history.
+
 ## Examples
 
 Cherry-pick a single commit to `master`:

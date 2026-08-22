@@ -26,6 +26,49 @@ COMMIT_PATTERN = re.compile(
 )
 
 
+class Tooltip:
+    def __init__(self, widget: tk.Widget, text: str) -> None:
+        self.widget = widget
+        self.text = text
+        self.window: Optional[tk.Toplevel] = None
+        self.after_id: Optional[str] = None
+        widget.bind("<Enter>", self._schedule, add="+")
+        widget.bind("<Leave>", self._hide, add="+")
+
+    def _schedule(self, _event: tk.Event) -> None:
+        self._hide()
+        self.after_id = self.widget.after(500, self._show)
+
+    def _show(self) -> None:
+        if self.window is not None:
+            return
+        self.window = tk.Toplevel(self.widget)
+        self.window.wm_overrideredirect(True)
+        self.window.attributes("-topmost", True)
+        label = tk.Label(
+            self.window,
+            text=self.text,
+            justify="left",
+            background="#fff8dc",
+            relief="solid",
+            borderwidth=1,
+            padx=6,
+            pady=4,
+        )
+        label.pack()
+        x = self.widget.winfo_rootx() + 12
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 4
+        self.window.geometry(f"+{x}+{y}")
+
+    def _hide(self, _event: Optional[tk.Event] = None) -> None:
+        if self.after_id is not None:
+            self.widget.after_cancel(self.after_id)
+            self.after_id = None
+        if self.window is not None:
+            self.window.destroy()
+            self.window = None
+
+
 class CommitPicker(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
@@ -45,6 +88,7 @@ class CommitPicker(tk.Tk):
         self.mode = tk.StringVar(value="gh")
         self.draft = tk.BooleanVar()
         self.editor = tk.BooleanVar()
+        self.displayed_history = tk.StringVar(value="Loading...")
         self.status = tk.StringVar(value="Loading commits...")
 
         self._build_ui()
@@ -61,27 +105,45 @@ class CommitPicker(tk.Tk):
         controls.columnconfigure(1, weight=1)
         controls.columnconfigure(3, weight=1)
 
-        ttk.Label(controls, text="Base branch").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        base_label = ttk.Label(controls, text="PR base (target)")
+        base_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.base_combo = ttk.Combobox(controls, textvariable=self.base_branch, state="readonly")
         self.base_combo.grid(row=0, column=1, sticky="ew", padx=(0, 16))
-        ttk.Label(controls, text="New branch").grid(row=0, column=2, sticky="w", padx=(0, 8))
-        ttk.Entry(controls, textvariable=self.branch_name).grid(row=0, column=3, sticky="ew")
+        branch_label = ttk.Label(controls, text="New branch")
+        branch_label.grid(row=0, column=2, sticky="w", padx=(0, 8))
+        branch_entry = ttk.Entry(controls, textvariable=self.branch_name)
+        branch_entry.grid(row=0, column=3, sticky="ew")
 
         options = ttk.Frame(controls)
         options.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(12, 0))
-        ttk.Checkbutton(options, text="All branches", variable=self.all_branches, command=self._load_commits).pack(side="left")
-        ttk.Checkbutton(options, text="Update base", variable=self.update_base).pack(side="left")
+        all_branches_check = ttk.Checkbutton(options, text="All branches", variable=self.all_branches, command=self._load_commits)
+        all_branches_check.pack(side="left")
+        update_base_check = ttk.Checkbutton(options, text="Update base", variable=self.update_base)
+        update_base_check.pack(side="left")
         ttk.Label(options, text="PR mode:").pack(side="left", padx=(20, 6))
-        ttk.Radiobutton(options, text="GitHub CLI", variable=self.mode, value="gh").pack(side="left")
-        ttk.Radiobutton(options, text="Markdown file", variable=self.mode, value="md").pack(side="left", padx=(8, 0))
-        ttk.Checkbutton(options, text="Draft", variable=self.draft).pack(side="left", padx=(20, 0))
-        ttk.Checkbutton(options, text="Open editor", variable=self.editor).pack(side="left", padx=(12, 0))
+        github_mode_radio = ttk.Radiobutton(options, text="GitHub CLI", variable=self.mode, value="gh")
+        github_mode_radio.pack(side="left")
+        markdown_mode_radio = ttk.Radiobutton(options, text="Markdown file", variable=self.mode, value="md")
+        markdown_mode_radio.pack(side="left", padx=(8, 0))
+        draft_check = ttk.Checkbutton(options, text="Draft", variable=self.draft)
+        draft_check.pack(side="left", padx=(20, 0))
+        editor_check = ttk.Checkbutton(options, text="Open editor", variable=self.editor)
+        editor_check.pack(side="left", padx=(12, 0))
+
+        ttk.Label(controls, text="Displayed history").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(10, 0))
+        displayed_label = ttk.Label(controls, textvariable=self.displayed_history)
+        displayed_label.grid(row=2, column=1, columnspan=3, sticky="w", pady=(10, 0))
 
         toolbar = ttk.Frame(self, padding=(12, 0, 12, 8))
         toolbar.grid(row=2, column=0, sticky="ew")
-        ttk.Button(toolbar, text="Refresh", command=self._refresh_repository).pack(side="left")
-        ttk.Button(toolbar, text="Select all", command=self._select_all).pack(side="left", padx=(8, 0))
-        ttk.Button(toolbar, text="Clear selection", command=self._clear_selection).pack(side="left", padx=(8, 0))
+        refresh_button = ttk.Button(toolbar, text="Refresh", command=self._refresh_repository)
+        refresh_button.pack(side="left")
+        select_all_button = ttk.Button(toolbar, text="Select all", command=self._select_all)
+        select_all_button.pack(side="left", padx=(8, 0))
+        clear_button = ttk.Button(toolbar, text="Clear selection", command=self._clear_selection)
+        clear_button.pack(side="left", padx=(8, 0))
+        help_button = ttk.Button(toolbar, text="Help", command=self._show_help)
+        help_button.pack(side="left", padx=(8, 0))
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
 
         tree_frame = ttk.Frame(self, padding=(12, 0, 12, 8))
@@ -111,6 +173,21 @@ class CommitPicker(tk.Tk):
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scrollbar.set)
         self.tree.bind("<Button-1>", self._toggle_row)
+        Tooltip(base_label, "Branch the new PR will target. This is not the history currently displayed.")
+        Tooltip(self.base_combo, "Select the base branch used by the cherry-pick command and PR.")
+        Tooltip(branch_label, "Optional name for the new cherry-pick branch.")
+        Tooltip(branch_entry, "Optional name for the new cherry-pick branch.")
+        Tooltip(refresh_button, "Reload branches and commits from the launch-directory repository.")
+        Tooltip(select_all_button, "Select every commit currently displayed.")
+        Tooltip(clear_button, "Clear all commit selections.")
+        Tooltip(help_button, "Show an explanation of the GUI workflow and branch scopes.")
+        Tooltip(self.tree, "Click a commit row to select or deselect it for cherry-picking.")
+        Tooltip(all_branches_check, "Include commits from every local and remote branch. Off means the checked-out branch.")
+        Tooltip(update_base_check, "Pull the selected PR base branch before cherry-picking.")
+        Tooltip(github_mode_radio, "Create the PR with the GitHub CLI.")
+        Tooltip(markdown_mode_radio, "Write PR details to a Markdown file instead of submitting with gh.")
+        Tooltip(draft_check, "Pass --draft when creating the GitHub PR.")
+        Tooltip(editor_check, "Pass --editor to gh so you can edit the PR before submission.")
 
         output_frame = ttk.LabelFrame(self, text="Command output", padding=8)
         output_frame.grid(row=3, column=0, sticky="nsew", padx=12, pady=(0, 8))
@@ -142,11 +219,16 @@ class CommitPicker(tk.Tk):
         try:
             branches = [branch.strip() for branch in self._git("branch", "--format=%(refname:short)").splitlines()]
             current = self._git("branch", "--show-current").strip()
+            self.displayed_history.set(
+                "All local and remote branches" if self.all_branches.get() else (current or "Detached HEAD")
+            )
             self.base_combo["values"] = branches
-            if current in branches:
-                self.base_branch.set(current)
-            elif branches and not self.base_branch.get():
-                self.base_branch.set(branches[0])
+            if self.base_branch.get() not in branches:
+                default_base = next(
+                    (branch for branch in ("master", "main") if branch in branches),
+                    current or (branches[0] if branches else ""),
+                )
+                self.base_branch.set(default_base)
             self._load_commits()
         except (OSError, RuntimeError) as error:
             self.status.set("Repository unavailable")
@@ -179,6 +261,15 @@ class CommitPicker(tk.Tk):
                 values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
             )
         self.status.set(f"{len(self.commits)} commits loaded")
+
+    def _show_help(self) -> None:
+        messagebox.showinfo(
+            "git-cp-pr GUI Help",
+            "Select commits by clicking their rows, then choose the PR options and run the workflow.\n\n"
+            "Displayed history is the checked-out branch by default. Enable All branches to include every local and remote branch.\n\n"
+            "PR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\n"
+            "The workflow creates a cherry-pick branch, cherry-picks the selected commits, pushes it, creates or writes the PR, and returns to the original branch.",
+        )
 
     def _toggle_row(self, event: tk.Event) -> None:
         row = self.tree.identify_row(event.y)
