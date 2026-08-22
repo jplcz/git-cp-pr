@@ -71,3 +71,7 @@ git-cp-pr -b main --mode md abc1234..def5678
 * **Cherry-pick:** Applies the requested commits using Git's native logic.
 * **Format:** The CommitFormatter class parses the commit bodies, cleans markdown, extracts trailers, and merges them.
 * **Publish:** Creates a PR via gh or saves a pull_request_<timestamp>.md file.
+
+## Contributing
+
+Pull requests are welcome! If you encounter issues, please check that your git environment is clean before running the script.
