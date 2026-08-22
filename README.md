@@ -131,6 +131,22 @@ consistent.
 The PR base target defaults to `master` when present, otherwise `main`, and is
 independent from the displayed history.
 
+For maintainers, `scripts/generate_demo_screenshots.py` is an internal helper
+and is not installed with the application. On Ubuntu, install its graphical
+dependencies with:
+
+```bash
+./scripts/setup_screenshot_dependencies.sh
+.venv/bin/python scripts/generate_demo_screenshots.py
+```
+
+The setup helper installs `python3`, `python3-tk`, and `xvfb` with `apt`, then
+installs the Python requirements into the project-local `.venv`.
+
+On macOS or Windows, install Pillow and run the same script from a graphical
+session. On Linux the helper uses a hidden Xvfb display, so it does not capture
+the desktop or move/control the mouse pointer.
+
 ## Examples
 
 Cherry-pick a single commit to `master`:
