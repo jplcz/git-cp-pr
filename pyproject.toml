@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "git-cp-pr"
+version = "1.0.0"
+description = "Automated tool to cherry-pick commits and create PRs via GitHub CLI or markdown."
+readme = "README.md"
+authors = [
+    { name = "Jarosław Pelczar", email = "jarek@jpelczar.com" }
+]
+license = { text = "The Unlicense" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: The Unlicense",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.6"
+dependencies = []
+
+[project.scripts]
+git-cp-pr = "git-cp-pr:master"
