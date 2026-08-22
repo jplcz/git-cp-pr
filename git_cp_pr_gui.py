@@ -85,6 +85,7 @@ class CommitPicker(tk.Tk):
         self._window_icon = self._load_window_icon()
         self.cli_script = Path(__file__).resolve().with_name("git_cp_pr.py")
         self.commits: Dict[str, Dict[str, str]] = {}
+        self.commit_diffs: Dict[str, str] = {}
         self.output_queue: queue.Queue = queue.Queue()
         self.running = False
 
@@ -98,6 +99,7 @@ class CommitPicker(tk.Tk):
         self.dry_run = tk.BooleanVar()
         self.displayed_history = tk.StringVar(value="Loading...")
         self.status = tk.StringVar(value="Loading commits...")
+        self.diff_status = tk.StringVar(value="Select a commit checkbox to preview its diff")
 
         self._load_preferences()
         self.protocol("WM_DELETE_WINDOW", self._close)
@@ -296,6 +298,7 @@ class CommitPicker(tk.Tk):
         self.tree.configure(yscrollcommand=scrollbar.set)
         self.tree.tag_configure("picked", background="#e0efe8", foreground="#173b4d")
         self.tree.bind("<Button-1>", self._toggle_row)
+        self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
         Tooltip(base_label, "Branch the new PR will target. This is not the history currently displayed.")
         Tooltip(self.base_combo, "Select the base branch used by the cherry-pick command and PR.")
         Tooltip(branch_label, "Optional name for the new cherry-pick branch.")
@@ -304,7 +307,7 @@ class CommitPicker(tk.Tk):
         Tooltip(select_all_button, "Select every commit currently displayed.")
         Tooltip(clear_button, "Clear all commit selections.")
         Tooltip(help_button, "Show an explanation of the GUI workflow and branch scopes.")
-        Tooltip(self.tree, "Click a commit row to select or deselect it for cherry-picking.")
+        Tooltip(self.tree, "Click the Pick checkbox to select or deselect a commit for cherry-picking.")
         Tooltip(all_branches_check, "Only expands the displayed Git tree to local and remote branches. It does not select or add commits to the cherry-pick.")
         Tooltip(update_base_check, "Pull the selected PR base branch before cherry-picking.")
         Tooltip(github_mode_radio, "Create the PR with the GitHub CLI.")
@@ -313,8 +316,34 @@ class CommitPicker(tk.Tk):
         Tooltip(editor_check, "Pass --editor to gh so you can edit the PR before submission.")
         Tooltip(dry_run_check, "Create the new branch only. Do not cherry-pick commits or push anything.")
 
-        output_frame = ttk.LabelFrame(self, text="Command output", style="Section.TLabelframe", padding=8)
-        output_frame.grid(row=4, column=0, sticky="nsew", padx=12, pady=(0, 8))
+        self.bottom_tabs = ttk.Notebook(self)
+        self.bottom_tabs.grid(row=4, column=0, sticky="nsew", padx=12, pady=(0, 8))
+
+        preview_frame = ttk.Frame(self.bottom_tabs, padding=8)
+        self.bottom_tabs.add(preview_frame, text="Diff preview")
+        preview_frame.columnconfigure(0, weight=1)
+        preview_frame.rowconfigure(1, weight=1)
+        ttk.Label(preview_frame, textvariable=self.diff_status, style="Muted.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 6))
+        self.diff_preview = tk.Text(preview_frame, height=12, wrap="none", state="disabled", font=("TkFixedFont", 10))
+        self.diff_preview.grid(row=1, column=0, sticky="nsew")
+        self.diff_preview.tag_configure("diff_meta", foreground="#5f6368")
+        self.diff_preview.tag_configure("diff_hunk", foreground="#0b5394")
+        self.diff_preview.tag_configure("diff_add", foreground="#1b5e20")
+        self.diff_preview.tag_configure("diff_del", foreground="#8b1e1e")
+        self.diff_preview.tag_configure("diff_file", foreground="#173b4d", font=("TkFixedFont", 10, "bold"))
+        preview_y_scrollbar = ttk.Scrollbar(preview_frame, orient="vertical", command=self.diff_preview.yview)
+        preview_y_scrollbar.grid(row=1, column=1, sticky="ns")
+        preview_x_scrollbar = ttk.Scrollbar(preview_frame, orient="horizontal", command=self.diff_preview.xview)
+        preview_x_scrollbar.grid(row=2, column=0, sticky="ew")
+        self.diff_preview.configure(yscrollcommand=preview_y_scrollbar.set, xscrollcommand=preview_x_scrollbar.set)
+
+        self.output_tab = ttk.Frame(self.bottom_tabs, padding=8)
+        self.bottom_tabs.add(self.output_tab, text="Command output")
+        self.bottom_tabs.tab(self.output_tab, state="hidden")
+        output_frame = ttk.Frame(self.output_tab)
+        output_frame.grid(row=0, column=0, sticky="nsew")
+        self.output_tab.columnconfigure(0, weight=1)
+        self.output_tab.rowconfigure(0, weight=1)
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(0, weight=1)
         self.output = tk.Text(output_frame, height=7, wrap="word", state="disabled")
@@ -388,6 +417,7 @@ class CommitPicker(tk.Tk):
         raw = self._git(*log_args)
         self.tree.delete(*self.tree.get_children())
         self.commits.clear()
+        self.commit_diffs.clear()
         for line in raw.splitlines():
             match = COMMIT_PATTERN.match(line)
             if not match:
@@ -401,31 +431,53 @@ class CommitPicker(tk.Tk):
                 iid=commit_hash,
                 values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
             )
+        self._set_diff_preview_text("Select a commit checkbox to preview its diff\n")
+        self.diff_status.set("Select a commit checkbox to preview its diff")
         self.status.set(f"{len(self.commits)} commits loaded")
 
     def _show_help(self) -> None:
         messagebox.showinfo(
             "git-cp-pr GUI Help",
-            "Select commits by clicking their rows, then choose the PR options and run the workflow.\n\n"
+            "Select commits using the Pick checkboxes, then choose the PR options and run the workflow.\n\n"
             "Displayed history is the checked-out branch by default. Enable All branches in tree to view commits reachable from local and remote branches. This only changes what is displayed; it does not select or add any commits to the cherry-pick.\n\n"
             "PR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\n"
             "Before running, make sure the worktree is clean and the selected commits apply cleanly. The workflow needs a writable repository and remote; GitHub CLI mode also needs an authenticated gh installation. Conflicts or cancellation remove the temporary branch, while successful runs keep it and return to the original branch.",
         )
 
     def _toggle_row(self, event: tk.Event) -> None:
+        region = self.tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return None
         row = self.tree.identify_row(event.y)
         if not row:
-            return
+            return None
+        column = self.tree.identify_column(event.x)
+        if column != "#1":
+            return None
         values = list(self.tree.item(row, "values"))
         values[0] = "☑" if values[0] == "☐" else "☐"
         self.tree.item(row, values=values, tags=("picked",) if values[0] == "☑" else ())
+        self._update_diff_preview(row)
         return "break"
+
+    def _on_tree_select(self, _event: tk.Event) -> None:
+        selected_rows = self.tree.selection()
+        self._update_diff_preview(selected_rows[0] if selected_rows else None)
 
     def _set_selection(self, selected: bool) -> None:
         for row in self.tree.get_children():
             values = list(self.tree.item(row, "values"))
             values[0] = "☑" if selected else "☐"
             self.tree.item(row, values=values, tags=("picked",) if selected else ())
+        selected_rows = self.tree.selection()
+        if selected_rows:
+            self._update_diff_preview(selected_rows[0])
+            return
+        if selected:
+            rows = self.tree.get_children()
+            self._update_diff_preview(rows[0] if rows else None)
+        else:
+            self._update_diff_preview(None)
 
     def _select_all(self) -> None:
         self._set_selection(True)
@@ -439,6 +491,75 @@ class CommitPicker(tk.Tk):
             for row in self.tree.get_children()
             if self.tree.item(row, "values")[0] == "☑"
         ]
+
+    def _set_diff_preview_text(self, text: str) -> None:
+        self.diff_preview.configure(state="normal")
+        self.diff_preview.delete("1.0", "end")
+        for line in text.splitlines(keepends=True):
+            tags = self._diff_tags_for_line(line)
+            self.diff_preview.insert("end", line, tags)
+        self.diff_preview.see("1.0")
+        self.diff_preview.configure(state="disabled")
+
+    def _diff_tags_for_line(self, line: str) -> Tuple[str, ...]:
+        if line.startswith("diff --git ") or line.startswith("--- ") or line.startswith("+++ "):
+            return ("diff_file",)
+        if line.startswith("@@ "):
+            return ("diff_hunk",)
+        if line.startswith("+") and not line.startswith("+++"):
+            return ("diff_add",)
+        if line.startswith("-") and not line.startswith("---"):
+            return ("diff_del",)
+        if line.startswith(("commit ", "Author:", "Date:", "index ")):
+            return ("diff_meta",)
+        return ()
+
+    def _commit_diff(self, commit_hash: str) -> str:
+        cached = self.commit_diffs.get(commit_hash)
+        if cached is not None:
+            return cached
+        result = subprocess.run(
+            ["git", "show", "--no-color", commit_hash],
+            cwd=self.repo_dir,
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip() or "Unable to load commit diff")
+        self.commit_diffs[commit_hash] = result.stdout
+        return result.stdout
+
+    def _update_diff_preview(self, preferred_commit: Optional[str]) -> None:
+        rows = set(self.tree.get_children())
+        commit_hash: Optional[str] = None
+        if preferred_commit and preferred_commit in rows:
+            commit_hash = preferred_commit
+        else:
+            selected_rows = self.tree.selection()
+            if selected_rows:
+                commit_hash = selected_rows[0]
+            else:
+                picked = self._selected_commits()
+                if picked:
+                    commit_hash = picked[0]
+
+        if commit_hash is None:
+            self.diff_status.set("Select a commit row or checkbox to preview its diff")
+            self._set_diff_preview_text("Select a commit row or checkbox to preview its diff\n")
+            return
+
+        picked_count = len(self._selected_commits())
+        commit_meta = self.commits.get(commit_hash, {})
+        summary = f"{commit_meta.get('short', commit_hash[:8])} - {commit_meta.get('subject', '')}".strip()
+        if picked_count > 1:
+            self.diff_status.set(f"Showing {summary} ({picked_count} commits checked)")
+        else:
+            self.diff_status.set(f"Showing {summary}")
+
+        try:
+            self._set_diff_preview_text(self._commit_diff(commit_hash))
+        except (OSError, RuntimeError) as error:
+            self._set_diff_preview_text(f"Failed to load diff for {commit_hash}: {error}\n")
 
     def _build_command(self, selected: List[str]) -> List[str]:
         command = [sys.executable, str(self.cli_script)]
@@ -484,10 +605,15 @@ class CommitPicker(tk.Tk):
             return
         self._save_preferences()
         command = self._build_command(selected)
+        self._show_output_tab()
         self._append_output("$ " + " ".join(command) + "\n")
         self.run_button.configure(state="disabled")
         self.running = True
         threading.Thread(target=self._execute_cli, args=(command,), daemon=True).start()
+
+    def _show_output_tab(self) -> None:
+        self.bottom_tabs.tab(self.output_tab, state="normal")
+        self.bottom_tabs.select(self.output_tab)
 
     def _execute_cli(self, command: List[str]) -> None:
         try:
