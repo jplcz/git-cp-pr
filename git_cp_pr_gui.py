@@ -91,17 +91,42 @@ class CommitPicker(tk.Tk):
         self.displayed_history = tk.StringVar(value="Loading...")
         self.status = tk.StringVar(value="Loading commits...")
 
+        self._configure_style()
         self._build_ui()
         self._refresh_repository()
         self.after(100, self._poll_output)
 
+    def _configure_style(self) -> None:
+        self.configure(background="#f4f1ea")
+        style = ttk.Style(self)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+        style.configure("TFrame", background="#f4f1ea")
+        style.configure("Header.TFrame", background="#173b4d")
+        style.configure("Header.TLabel", background="#173b4d", foreground="#f8f4e8", font=("TkDefaultFont", 18, "bold"))
+        style.configure("Subheader.TLabel", background="#173b4d", foreground="#c8d9d8", font=("TkDefaultFont", 10))
+        style.configure("Section.TLabelframe", background="#f4f1ea", bordercolor="#d8d0c2")
+        style.configure("Section.TLabelframe.Label", background="#f4f1ea", foreground="#173b4d", font=("TkDefaultFont", 10, "bold"))
+        style.configure("TLabel", background="#f4f1ea", foreground="#263238")
+        style.configure("Muted.TLabel", background="#f4f1ea", foreground="#6b7476")
+        style.configure("Accent.TButton", background="#d96c43", foreground="#ffffff", padding=(14, 8), font=("TkDefaultFont", 10, "bold"))
+        style.map("Accent.TButton", background=[("active", "#bd5632"), ("disabled", "#c8b9ae")])
+        style.configure("Treeview", background="#fffdf8", fieldbackground="#fffdf8", foreground="#263238", rowheight=28, bordercolor="#d8d0c2")
+        style.configure("Treeview.Heading", background="#e5ded1", foreground="#173b4d", font=("TkDefaultFont", 10, "bold"), padding=(6, 7))
+        style.map("Treeview", background=[("selected", "#c8d9d8")], foreground=[("selected", "#173b4d")])
+
     def _build_ui(self) -> None:
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.rowconfigure(3, weight=1)
+        self.rowconfigure(2, weight=1)
+        self.rowconfigure(4, weight=1)
+
+        header = ttk.Frame(self, style="Header.TFrame", padding=(20, 16))
+        header.grid(row=0, column=0, sticky="ew")
+        ttk.Label(header, text="Cherry-pick workspace", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(header, text=str(self.repo_dir), style="Subheader.TLabel").pack(anchor="w", pady=(4, 0))
 
         controls = ttk.Frame(self, padding=12)
-        controls.grid(row=0, column=0, sticky="ew")
+        controls.grid(row=1, column=0, sticky="ew")
         controls.columnconfigure(1, weight=1)
         controls.columnconfigure(3, weight=1)
 
@@ -135,7 +160,7 @@ class CommitPicker(tk.Tk):
         displayed_label.grid(row=2, column=1, columnspan=3, sticky="w", pady=(10, 0))
 
         toolbar = ttk.Frame(self, padding=(12, 0, 12, 8))
-        toolbar.grid(row=2, column=0, sticky="ew")
+        toolbar.grid(row=3, column=0, sticky="ew")
         refresh_button = ttk.Button(toolbar, text="Refresh", command=self._refresh_repository)
         refresh_button.pack(side="left")
         select_all_button = ttk.Button(toolbar, text="Select all", command=self._select_all)
@@ -147,7 +172,7 @@ class CommitPicker(tk.Tk):
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
 
         tree_frame = ttk.Frame(self, padding=(12, 0, 12, 8))
-        tree_frame.grid(row=1, column=0, sticky="nsew")
+        tree_frame.grid(row=2, column=0, sticky="nsew")
         tree_frame.columnconfigure(0, weight=1)
         tree_frame.rowconfigure(0, weight=1)
         self.tree = ttk.Treeview(
@@ -172,6 +197,7 @@ class CommitPicker(tk.Tk):
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scrollbar.set)
+        self.tree.tag_configure("picked", background="#e0efe8", foreground="#173b4d")
         self.tree.bind("<Button-1>", self._toggle_row)
         Tooltip(base_label, "Branch the new PR will target. This is not the history currently displayed.")
         Tooltip(self.base_combo, "Select the base branch used by the cherry-pick command and PR.")
@@ -189,8 +215,8 @@ class CommitPicker(tk.Tk):
         Tooltip(draft_check, "Pass --draft when creating the GitHub PR.")
         Tooltip(editor_check, "Pass --editor to gh so you can edit the PR before submission.")
 
-        output_frame = ttk.LabelFrame(self, text="Command output", padding=8)
-        output_frame.grid(row=3, column=0, sticky="nsew", padx=12, pady=(0, 8))
+        output_frame = ttk.LabelFrame(self, text="Command output", style="Section.TLabelframe", padding=8)
+        output_frame.grid(row=4, column=0, sticky="nsew", padx=12, pady=(0, 8))
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(0, weight=1)
         self.output = tk.Text(output_frame, height=7, wrap="word", state="disabled")
@@ -200,8 +226,8 @@ class CommitPicker(tk.Tk):
         self.output.configure(yscrollcommand=output_scrollbar.set)
 
         footer = ttk.Frame(self, padding=(12, 0, 12, 12))
-        footer.grid(row=4, column=0, sticky="ew")
-        self.run_button = ttk.Button(footer, text="Cherry-pick selected commits", command=self._run_cli)
+        footer.grid(row=5, column=0, sticky="ew")
+        self.run_button = ttk.Button(footer, text="Cherry-pick selected commits", style="Accent.TButton", command=self._run_cli)
         self.run_button.pack(side="right")
 
     def _git(self, *args: str) -> str:
@@ -277,14 +303,14 @@ class CommitPicker(tk.Tk):
             return
         values = list(self.tree.item(row, "values"))
         values[0] = "☑" if values[0] == "☐" else "☐"
-        self.tree.item(row, values=values)
+        self.tree.item(row, values=values, tags=("picked",) if values[0] == "☑" else ())
         return "break"
 
     def _set_selection(self, selected: bool) -> None:
         for row in self.tree.get_children():
             values = list(self.tree.item(row, "values"))
             values[0] = "☑" if selected else "☐"
-            self.tree.item(row, values=values)
+            self.tree.item(row, values=values, tags=("picked",) if selected else ())
 
     def _select_all(self) -> None:
         self._set_selection(True)
