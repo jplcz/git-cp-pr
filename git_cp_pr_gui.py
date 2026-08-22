@@ -116,7 +116,7 @@ class CommitPicker(tk.Tk):
 
         options = ttk.Frame(controls)
         options.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(12, 0))
-        all_branches_check = ttk.Checkbutton(options, text="All branches", variable=self.all_branches, command=self._load_commits)
+        all_branches_check = ttk.Checkbutton(options, text="All branches in tree (view only)", variable=self.all_branches, command=self._load_commits)
         all_branches_check.pack(side="left")
         update_base_check = ttk.Checkbutton(options, text="Update base", variable=self.update_base)
         update_base_check.pack(side="left")
@@ -182,7 +182,7 @@ class CommitPicker(tk.Tk):
         Tooltip(clear_button, "Clear all commit selections.")
         Tooltip(help_button, "Show an explanation of the GUI workflow and branch scopes.")
         Tooltip(self.tree, "Click a commit row to select or deselect it for cherry-picking.")
-        Tooltip(all_branches_check, "Include commits from every local and remote branch. Off means the checked-out branch.")
+        Tooltip(all_branches_check, "Only expands the displayed Git tree to local and remote branches. It does not select or add commits to the cherry-pick.")
         Tooltip(update_base_check, "Pull the selected PR base branch before cherry-picking.")
         Tooltip(github_mode_radio, "Create the PR with the GitHub CLI.")
         Tooltip(markdown_mode_radio, "Write PR details to a Markdown file instead of submitting with gh.")
@@ -220,7 +220,7 @@ class CommitPicker(tk.Tk):
             branches = [branch.strip() for branch in self._git("branch", "--format=%(refname:short)").splitlines()]
             current = self._git("branch", "--show-current").strip()
             self.displayed_history.set(
-                "All local and remote branches" if self.all_branches.get() else (current or "Detached HEAD")
+                "All local and remote branches in tree" if self.all_branches.get() else (current or "Detached HEAD")
             )
             self.base_combo["values"] = branches
             if self.base_branch.get() not in branches:
@@ -237,7 +237,7 @@ class CommitPicker(tk.Tk):
     def _load_commits(self) -> None:
         log_args = ["log"]
         if self.all_branches.get():
-            log_args.append("--all")
+            log_args.extend(["--branches", "--remotes"])
         log_args.extend([
             "--date=short",
             "--graph",
@@ -266,7 +266,7 @@ class CommitPicker(tk.Tk):
         messagebox.showinfo(
             "git-cp-pr GUI Help",
             "Select commits by clicking their rows, then choose the PR options and run the workflow.\n\n"
-            "Displayed history is the checked-out branch by default. Enable All branches to include every local and remote branch.\n\n"
+            "Displayed history is the checked-out branch by default. Enable All branches in tree to view commits reachable from local and remote branches. This only changes what is displayed; it does not select or add any commits to the cherry-pick.\n\n"
             "PR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\n"
             "The workflow creates a cherry-pick branch, cherry-picks the selected commits, pushes it, creates or writes the PR, and returns to the original branch.",
         )

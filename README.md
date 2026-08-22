@@ -121,7 +121,10 @@ it does not use the repository containing the installed application.
 
 The GUI exposes the base branch, custom branch name, base update, PR mode,
 draft, editor, and commit-history scope options. By default it displays the
-checked-out branch; enable **All branches** to include every branch. It invokes
+checked-out branch; enable **All branches in tree** to view commits from the
+local and remote branches shown in the Git tree. This only expands the commits
+available for selection; it does not select or add any commits to the
+cherry-pick. It invokes
 `git-cp-pr`'s existing Python workflow, so command-line and GUI behavior remain
 consistent.
 
