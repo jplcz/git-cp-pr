@@ -12,7 +12,7 @@ from pathlib import Path
 try:
     from PIL import ImageGrab
 except ImportError as error:
-    raise SystemExit("This script requires Pillow. Install it with: python -m pip install Pillow") from error
+    raise SystemExit("This script requires Pillow. Install it with: python3 -m pip install Pillow") from error
 
 SCRIPT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPT_DIR))

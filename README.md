@@ -131,6 +131,16 @@ consistent.
 The PR base target defaults to `master` when present, otherwise `main`, and is
 independent from the displayed history.
 
+### Screenshots
+
+Current-branch view:
+
+![GUI showing the current branch commit tree](docs/screenshots/gui-current-branch.png)
+
+All-branches view:
+
+![GUI showing commits from all local and remote branches](docs/screenshots/gui-all-branches.png)
+
 For maintainers, `scripts/generate_demo_screenshots.py` is an internal helper
 and is not installed with the application. On Ubuntu, install its graphical
 dependencies with:
