@@ -202,7 +202,7 @@ class CommitPicker(tk.Tk):
         style.configure("Section.TLabelframe.Label", background="#f4f1ea", foreground="#173b4d", font=("TkDefaultFont", 10, "bold"))
         style.configure("TLabel", background="#f4f1ea", foreground="#263238")
         style.configure("Muted.TLabel", background="#f4f1ea", foreground="#6b7476")
-        style.configure("Link.TLabel", background="#173b4d", foreground="#f1a17e", font=("TkDefaultFont", 10, "underline"))
+        style.configure("Link.TLabel", background="#f4f1ea", foreground="#b95332", font=("TkDefaultFont", 10, "underline"))
         style.configure("Warning.TLabel", background="#f4f1ea", foreground="#9a4b2d", font=("TkDefaultFont", 9, "bold"))
         style.configure("Accent.TButton", background="#d96c43", foreground="#ffffff", padding=(14, 8), font=("TkDefaultFont", 10, "bold"))
         style.map("Accent.TButton", background=[("active", "#bd5632"), ("disabled", "#c8b9ae")])
@@ -217,12 +217,8 @@ class CommitPicker(tk.Tk):
 
         header = ttk.Frame(self, style="Header.TFrame", padding=(20, 16))
         header.grid(row=0, column=0, sticky="ew")
-        ttk.Label(header, text=f"Cherry-pick workspace · v{__version__}", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(header, text="Cherry-pick workspace", style="Header.TLabel").pack(anchor="w")
         ttk.Label(header, text=str(self.repo_dir), style="Subheader.TLabel").pack(anchor="w", pady=(4, 0))
-        project_link = ttk.Label(header, text="Project page", style="Link.TLabel", cursor="hand2")
-        project_link.pack(anchor="w", pady=(7, 0))
-        project_link.bind("<Button-1>", lambda _event: self._open_project_page())
-        Tooltip(project_link, "Open the GitHub Pages project site.")
 
         controls = ttk.Frame(self, padding=12)
         controls.grid(row=1, column=0, sticky="ew")
@@ -329,14 +325,23 @@ class CommitPicker(tk.Tk):
 
         footer = ttk.Frame(self, padding=(12, 0, 12, 12))
         footer.grid(row=5, column=0, sticky="ew")
+        footer_details = ttk.Frame(footer)
+        footer_details.pack(side="left", fill="x", expand=True, padx=(0, 16))
         warning_label = ttk.Label(
-            footer,
+            footer_details,
             text="Warning: this checks out branches, changes the worktree, cherry-picks, and pushes the new branch.",
             style="Warning.TLabel",
             justify="left",
             wraplength=720,
         )
-        warning_label.pack(side="left", fill="x", expand=True, padx=(0, 16))
+        warning_label.pack(anchor="w", fill="x")
+        footer_meta = ttk.Frame(footer_details)
+        footer_meta.pack(anchor="w", fill="x", pady=(6, 0))
+        ttk.Label(footer_meta, text=f"Version {__version__}", style="Muted.TLabel").pack(side="left")
+        project_link = ttk.Label(footer_meta, text="Project page", style="Link.TLabel", cursor="hand2")
+        project_link.pack(side="left", padx=(14, 0))
+        project_link.bind("<Button-1>", lambda _event: self._open_project_page())
+        Tooltip(project_link, "Open the GitHub Pages project site.")
         self.run_button = ttk.Button(footer, text="Cherry-pick selected commits", style="Accent.TButton", command=self._run_cli)
         self.run_button.pack(side="right")
 
