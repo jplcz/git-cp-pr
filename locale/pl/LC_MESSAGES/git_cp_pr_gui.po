@@ -81,7 +81,7 @@ msgid "Subject"
 msgstr "Temat"
 
 msgid "Diff preview"
-msgstr "Podgląd diff"
+msgstr "Podgląd różnicy"
 
 msgid "Command output"
 msgstr "Wyjście polecenia"
@@ -144,10 +144,10 @@ msgid "Command failed"
 msgstr "Polecenie nieudane"
 
 msgid "Select a commit checkbox to preview its diff"
-msgstr "Wybierz checkbox commitu, aby podejrzec diff"
+msgstr "Zaznacz commit aby podejrzeć różnicę"
 
 msgid "Select a commit row or checkbox to preview its diff"
-msgstr "Wybierz wiersz commitu lub checkbox, aby podejrzec diff"
+msgstr "Zaznacz lub wybierz commit aby podejrzeć różnicę"
 
 msgid "Showing {summary}"
 msgstr "Pokazuje {summary}"
@@ -186,7 +186,7 @@ msgid "Only expands the displayed Git tree to local and remote branches. It does
 msgstr "Rozszerza tylko widok drzewa Git do lokalnych i zdalnych galezi. Nie dodaje commitow do cherry-pick."
 
 msgid "Pull the selected PR base branch before cherry-picking."
-msgstr "Wykonaj pull dla wybranej bazy PR przed cherry-pick."
+msgstr "Wykonaj git pull dla wybranej gąłęzi PR przed cherry-pick."
 
 msgid "Create the PR with the GitHub CLI."
 msgstr "Utwórz PR przez GitHub CLI."
@@ -201,4 +201,4 @@ msgid "Create the new branch only. Do not cherry-pick commits or push anything."
 msgstr "Utwórz tylko nową gałąź. Bez cherry-pick i bez push."
 
 msgid "Open the GitHub Pages project site."
-msgstr "Otw,órz stronę projektu na GitHub Pages."
+msgstr "Otwórz stronę projektu na GitHub Pages."
