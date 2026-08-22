@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "git-cp-pr"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Automated tool to cherry-pick commits and create PRs via GitHub CLI or markdown."
 readme = "README.md"
 authors = [{ name = "Jarosław Pelczar", email = "jarek@jpelczar.com" }]
@@ -19,3 +19,6 @@ dependencies = []
 
 [project.scripts]
 git-cp-pr = "git_cp_pr:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "git_cp_pr.__version__" }
