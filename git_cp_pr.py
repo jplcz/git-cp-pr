@@ -205,35 +205,9 @@ def main():
     print_status("🚀", "Pushing branch to remote origin...")
     run_command(f"git push -u origin {custom_branch}")
 
-    # Format PR Title and Body based on single vs multiple commits
-    if len(expanded_commits) == 1:
-        # Single commit: Use the exact original commit message (subject + body)
-        single_hash = expanded_commits[0]
-        pr_title = run_command(f"git log -1 --pretty=%s {single_hash}")
-        pr_body = run_command(f"git log -1 --pretty=%b {single_hash}")
-        if not pr_body:
-            pr_body = f"Cherry-picked commit `{single_hash}` onto `{args.base}`."
-    else:
-        # Multiple commits: Use the structured template requested
-        first_subject = run_command(f"git log -1 --pretty=%s {expanded_commits[0]}")
-        pr_title = f"Cherry-pick {len(expanded_commits)} commits (e.g., {first_subject})"
-        
-        body_commits_list = []
-        body_details = []
-
-        for h in expanded_commits:
-            subj = run_command(f"git log -1 --pretty=%s {h}")
-            body = run_command(f"git log -1 --pretty=%b {h}")
-            
-            body_commits_list.append(f"* {subj}")
-            
-            detail_block = f"### {subj}\n\n"
-            detail_block += f"{body}\n\n" if body else "*No additional details provided.*\n\n"
-            body_details.append(detail_block)
-
-        pr_body = f"## Cherry picked commits\n" + "\n".join(body_commits_list) + "\n\n"
-        pr_body += f"## Cherry picked commit details\n\n" + "".join(body_details)
-        pr_body = pr_body.strip()
+    # Format the PR using cleaned commit bodies and merged trailers.
+    formatter = CommitFormatter(expanded_commits, args.base, custom_branch)
+    pr_title, pr_body = formatter.generate_pr_payload()
 
     # Determine execution mode (gh vs md)
     run_mode = args.mode
