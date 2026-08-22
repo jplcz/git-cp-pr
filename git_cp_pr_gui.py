@@ -9,12 +9,16 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Dict, List, Optional, Tuple
 
+from git_cp_pr import __version__
+
 
 COMMIT_SEPARATOR = "\x1f"
+PROJECT_PAGE_URL = "https://jplcz.github.io/git-cp-pr/"
 COMMIT_PATTERN = re.compile(
     r"^(?P<graph>[ |\\/*]+)?(?P<hash>[0-9a-f]{40})"
     + re.escape(COMMIT_SEPARATOR)
@@ -77,8 +81,8 @@ class CommitPicker(tk.Tk):
         self.title("git-cp-pr commit picker")
         self.geometry("1100x720")
         self.minsize(800, 520)
-        self._window_icon = self._load_window_icon()
         self.repo_dir = Path.cwd()
+        self._window_icon = self._load_window_icon()
         self.cli_script = Path(__file__).resolve().with_name("git_cp_pr.py")
         self.commits: Dict[str, Dict[str, str]] = {}
         self.output_queue: queue.Queue = queue.Queue()
@@ -154,6 +158,9 @@ class CommitPicker(tk.Tk):
         self._save_preferences()
         self.destroy()
 
+    def _open_project_page(self) -> None:
+        webbrowser.open(PROJECT_PAGE_URL)
+
     def _load_window_icon(self):
         icon_directories = (
             Path(__file__).resolve().parent,
@@ -195,6 +202,7 @@ class CommitPicker(tk.Tk):
         style.configure("Section.TLabelframe.Label", background="#f4f1ea", foreground="#173b4d", font=("TkDefaultFont", 10, "bold"))
         style.configure("TLabel", background="#f4f1ea", foreground="#263238")
         style.configure("Muted.TLabel", background="#f4f1ea", foreground="#6b7476")
+        style.configure("Link.TLabel", background="#173b4d", foreground="#f1a17e", font=("TkDefaultFont", 10, "underline"))
         style.configure("Warning.TLabel", background="#f4f1ea", foreground="#9a4b2d", font=("TkDefaultFont", 9, "bold"))
         style.configure("Accent.TButton", background="#d96c43", foreground="#ffffff", padding=(14, 8), font=("TkDefaultFont", 10, "bold"))
         style.map("Accent.TButton", background=[("active", "#bd5632"), ("disabled", "#c8b9ae")])
@@ -209,8 +217,12 @@ class CommitPicker(tk.Tk):
 
         header = ttk.Frame(self, style="Header.TFrame", padding=(20, 16))
         header.grid(row=0, column=0, sticky="ew")
-        ttk.Label(header, text="Cherry-pick workspace", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(header, text=f"Cherry-pick workspace · v{__version__}", style="Header.TLabel").pack(anchor="w")
         ttk.Label(header, text=str(self.repo_dir), style="Subheader.TLabel").pack(anchor="w", pady=(4, 0))
+        project_link = ttk.Label(header, text="Project page", style="Link.TLabel", cursor="hand2")
+        project_link.pack(anchor="w", pady=(7, 0))
+        project_link.bind("<Button-1>", lambda _event: self._open_project_page())
+        Tooltip(project_link, "Open the GitHub Pages project site.")
 
         controls = ttk.Frame(self, padding=12)
         controls.grid(row=1, column=0, sticky="ew")
