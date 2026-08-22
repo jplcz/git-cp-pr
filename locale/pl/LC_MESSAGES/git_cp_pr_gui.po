@@ -27,7 +27,7 @@ msgid "All branches in tree (view only)"
 msgstr "Wszystkie gałęzie w drzewie (tylko podgląd)"
 
 msgid "Update base"
-msgstr "Zaktualizuj bazę"
+msgstr "Zrób git pull"
 
 msgid "PR mode:"
 msgstr "Tryb PR:"
@@ -39,13 +39,10 @@ msgid "Markdown file"
 msgstr "Plik Markdown"
 
 msgid "Draft"
-msgstr "Szkic"
-
-msgid "Open editor"
-msgstr "Otwórz edytor"
+msgstr "Utwórz PR draft"
 
 msgid "Dry run"
-msgstr "Symulacja"
+msgstr "Nie wypychaj PRa"
 
 msgid "Displayed history"
 msgstr "Wyświetlana historia"
@@ -199,9 +196,6 @@ msgstr "Zapisz szczegóły PR do pliku Markdown zamiast wysyłać przez gh."
 
 msgid "Pass --draft when creating the GitHub PR."
 msgstr "Przekaż --draft podczas tworzenia PR."
-
-msgid "Pass --editor to gh so you can edit the PR before submission."
-msgstr "Przekaż --editor do gh, aby edytować PR przed wyslaniem."
 
 msgid "Create the new branch only. Do not cherry-pick commits or push anything."
 msgstr "Utwórz tylko nową gałąź. Bez cherry-pick i bez push."
