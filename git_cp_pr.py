@@ -7,7 +7,7 @@ import sys
 import time
 from typing import List, Dict, Tuple
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 
 class Color:
     # Use ANSI codes, checking if terminal supports color (enabled by default)
@@ -146,6 +146,7 @@ def main():
     parser.add_argument("--mode", choices=["gh", "md"], help="Force PR creation mode: 'gh' (GitHub CLI) or 'md' (Markdown file)")
     parser.add_argument("--draft", action="store_true", help="Create the pull request as a draft")
     parser.add_argument("-e", "--editor", "--edit", action="store_true", help="Open an editor to edit the PR title and body before GitHub CLI submission")
+    parser.add_argument("--dry-run", action="store_true", help="Create the cherry-pick branch only; do not cherry-pick or push")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args()
@@ -157,14 +158,25 @@ def main():
 
     original_branch = run_command("git branch --show-current", check=False)
     branch_created = False
+    remove_branch_on_exit = False
 
     def restore_original_branch() -> None:
-        if not branch_created or not original_branch:
+        if not branch_created:
+            return
+        if remove_branch_on_exit:
+            print_status("🧹", f"Cleaning up failed cherry-pick branch '{custom_branch}'...")
+            subprocess.run(["git", "cherry-pick", "--abort"], capture_output=True, text=True)
+        if not original_branch:
             return
         print_status("↩️", f"Returning to original branch '{original_branch}'...")
         result = subprocess.run(["git", "checkout", original_branch], capture_output=True, text=True)
         if result.returncode != 0:
             print_status("❌", f"Could not return to original branch '{original_branch}': {result.stderr.strip()}", Color.RED)
+            return
+        if remove_branch_on_exit:
+            result = subprocess.run(["git", "branch", "-D", custom_branch], capture_output=True, text=True)
+            if result.returncode != 0:
+                print_status("❌", f"Could not delete failed branch '{custom_branch}': {result.stderr.strip()}", Color.RED)
 
     atexit.register(restore_original_branch)
 
@@ -209,13 +221,21 @@ def main():
     print_status("🌿", f"Creating and switching to branch '{custom_branch}'...")
     run_command(f"git checkout -b {custom_branch}")
     branch_created = True
+    remove_branch_on_exit = True
+
+    if args.dry_run:
+        remove_branch_on_exit = False
+        print_status("🧪", f"Dry run complete. Branch '{custom_branch}' was created; no commits were cherry-picked or pushed.", Color.GREEN)
+        return
 
     print_status("🍒", f"Cherry-picking {len(expanded_commits)} commit(s)...")
     cp_cmd = ["git", "cherry-pick"] + args.commits
     cp_result = subprocess.run(cp_cmd)
     if cp_result.returncode != 0:
-        print_status("❌", "Cherry-pick encountered conflicts. Resolve them, run 'git cherry-pick --continue', and retry.", Color.RED)
+        print_status("❌", "Cherry-pick failed. The temporary branch will be removed.", Color.RED)
         sys.exit(1)
+
+    remove_branch_on_exit = False
 
     print_status("🚀", "Pushing branch to remote origin...")
     run_command(f"git push -u origin {custom_branch}")

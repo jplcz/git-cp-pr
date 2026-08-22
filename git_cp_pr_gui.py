@@ -89,6 +89,7 @@ class CommitPicker(tk.Tk):
         self.mode = tk.StringVar(value="gh")
         self.draft = tk.BooleanVar()
         self.editor = tk.BooleanVar()
+        self.dry_run = tk.BooleanVar()
         self.displayed_history = tk.StringVar(value="Loading...")
         self.status = tk.StringVar(value="Loading commits...")
 
@@ -138,6 +139,7 @@ class CommitPicker(tk.Tk):
         style.configure("Section.TLabelframe.Label", background="#f4f1ea", foreground="#173b4d", font=("TkDefaultFont", 10, "bold"))
         style.configure("TLabel", background="#f4f1ea", foreground="#263238")
         style.configure("Muted.TLabel", background="#f4f1ea", foreground="#6b7476")
+        style.configure("Warning.TLabel", background="#f4f1ea", foreground="#9a4b2d", font=("TkDefaultFont", 9, "bold"))
         style.configure("Accent.TButton", background="#d96c43", foreground="#ffffff", padding=(14, 8), font=("TkDefaultFont", 10, "bold"))
         style.map("Accent.TButton", background=[("active", "#bd5632"), ("disabled", "#c8b9ae")])
         style.configure("Treeview", background="#fffdf8", fieldbackground="#fffdf8", foreground="#263238", rowheight=28, bordercolor="#d8d0c2")
@@ -183,6 +185,8 @@ class CommitPicker(tk.Tk):
         draft_check.pack(side="left", padx=(20, 0))
         editor_check = ttk.Checkbutton(options, text="Open editor", variable=self.editor)
         editor_check.pack(side="left", padx=(12, 0))
+        dry_run_check = ttk.Checkbutton(options, text="Dry run", variable=self.dry_run)
+        dry_run_check.pack(side="left", padx=(12, 0))
 
         ttk.Label(controls, text="Displayed history").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(10, 0))
         displayed_label = ttk.Label(controls, textvariable=self.displayed_history)
@@ -243,6 +247,7 @@ class CommitPicker(tk.Tk):
         Tooltip(markdown_mode_radio, "Write PR details to a Markdown file instead of submitting with gh.")
         Tooltip(draft_check, "Pass --draft when creating the GitHub PR.")
         Tooltip(editor_check, "Pass --editor to gh so you can edit the PR before submission.")
+        Tooltip(dry_run_check, "Create the new branch only. Do not cherry-pick commits or push anything.")
 
         output_frame = ttk.LabelFrame(self, text="Command output", style="Section.TLabelframe", padding=8)
         output_frame.grid(row=4, column=0, sticky="nsew", padx=12, pady=(0, 8))
@@ -256,6 +261,14 @@ class CommitPicker(tk.Tk):
 
         footer = ttk.Frame(self, padding=(12, 0, 12, 12))
         footer.grid(row=5, column=0, sticky="ew")
+        warning_label = ttk.Label(
+            footer,
+            text="Warning: this checks out branches, changes the worktree, cherry-picks, and pushes the new branch.",
+            style="Warning.TLabel",
+            justify="left",
+            wraplength=720,
+        )
+        warning_label.pack(side="left", fill="x", expand=True, padx=(0, 16))
         self.run_button = ttk.Button(footer, text="Cherry-pick selected commits", style="Accent.TButton", command=self._run_cli)
         self.run_button.pack(side="right")
 
@@ -323,7 +336,7 @@ class CommitPicker(tk.Tk):
             "Select commits by clicking their rows, then choose the PR options and run the workflow.\n\n"
             "Displayed history is the checked-out branch by default. Enable All branches in tree to view commits reachable from local and remote branches. This only changes what is displayed; it does not select or add any commits to the cherry-pick.\n\n"
             "PR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\n"
-            "The workflow creates a cherry-pick branch, cherry-picks the selected commits, pushes it, creates or writes the PR, and returns to the original branch.",
+            "Before running, make sure the worktree is clean and the selected commits apply cleanly. The workflow needs a writable repository and remote; GitHub CLI mode also needs an authenticated gh installation. Conflicts or cancellation remove the temporary branch, while successful runs keep it and return to the original branch.",
         )
 
     def _toggle_row(self, event: tk.Event) -> None:
@@ -367,6 +380,8 @@ class CommitPicker(tk.Tk):
             command.append("--draft")
         if self.editor.get():
             command.append("--editor")
+        if self.dry_run.get():
+            command.append("--dry-run")
         command.extend(selected)
         return command
 
@@ -376,6 +391,23 @@ class CommitPicker(tk.Tk):
             messagebox.showwarning("No commits selected", "Select at least one commit to cherry-pick.")
             return
         if self.running:
+            return
+        if self.dry_run.get():
+            confirmation_message = (
+                "This will create the cherry-pick branch only. It will not cherry-pick commits or push anything.\n\n"
+                "The new branch will remain available, and you will return to the original branch. Continue?"
+            )
+        else:
+            confirmation_message = (
+                "This will check out the PR base, change the worktree, cherry-pick the selected commits, and push a new branch.\n\n"
+                "A conflict or cancellation will abort the cherry-pick and remove the temporary branch. Continue?"
+            )
+        confirmed = messagebox.askyesno(
+            "Confirm cherry-pick workflow",
+            confirmation_message,
+            icon="warning",
+        )
+        if not confirmed:
             return
         command = self._build_command(selected)
         self._append_output("$ " + " ".join(command) + "\n")
