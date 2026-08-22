@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import atexit
 import argparse
 import re
 import subprocess
@@ -154,6 +155,19 @@ def main():
         print_status("❌", "Current directory is not a valid Git repository.", Color.RED)
         sys.exit(1)
 
+    original_branch = run_command("git branch --show-current", check=False)
+    branch_created = False
+
+    def restore_original_branch() -> None:
+        if not branch_created or not original_branch:
+            return
+        print_status("↩️", f"Returning to original branch '{original_branch}'...")
+        result = subprocess.run(["git", "checkout", original_branch], capture_output=True, text=True)
+        if result.returncode != 0:
+            print_status("❌", f"Could not return to original branch '{original_branch}': {result.stderr.strip()}", Color.RED)
+
+    atexit.register(restore_original_branch)
+
     print_status("🔍", f"Checking out base branch '{args.base}'...")
     run_command(f"git checkout {args.base}")
 
@@ -194,6 +208,7 @@ def main():
 
     print_status("🌿", f"Creating and switching to branch '{custom_branch}'...")
     run_command(f"git checkout -b {custom_branch}")
+    branch_created = True
 
     print_status("🍒", f"Cherry-picking {len(expanded_commits)} commit(s)...")
     cp_cmd = ["git", "cherry-pick"] + args.commits

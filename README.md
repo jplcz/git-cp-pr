@@ -152,6 +152,7 @@ git-cp-pr --draft --editor abc1234
 * **Cherry-pick:** Applies the requested commits using Git's native logic.
 * **Format:** The CommitFormatter class parses the commit bodies, cleans markdown, extracts trailers, and merges them.
 * **Publish:** Creates a PR via gh or saves a pull_request_<timestamp>.md file.
+* **Restore:** Returns to the branch that was checked out when the command started.
 
 ## Contributing
 
