@@ -22,7 +22,45 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
 
 ## Installation
 
-1. Copy the `git_cp_pr.py` script into your project root or a directory in your `$PATH`.
+The recommended way to install and run this tool globally is using **pipx** (which runs the tool in an isolated environment and adds `git-cp-pr` to your system path):
+
+```bash
+pipx install .
+```
+
+Alternatively, you can install it locally using `pip`:
+
+```bash
+python3 -m pip install --user .
+```
+
+Or you can use:
+
+1. Copy the `git_cp_pr.py` script somewhere into your `$PATH`.
 2. Ensure it is executable:
-   ```bash
-   chmod +x git_cp_pr.py
+
+```bash
+chmod +x git_cp_pr.py
+```
+
+## Examples
+
+Cherry-pick a single commit to `master`:
+
+```bash
+git-cp-pr abc1234
+```
+
+Cherry-pick a range to `main` and output a Markdown file:
+
+```bash
+git-cp-pr -b main --mode md abc1234..def5678
+```
+
+## How It Works
+
+* **Checkout:** Switches to the specified base branch.
+* **Branching:** Creates a new temporary branch named cherry-pick-<hash>-<timestamp>.
+* **Cherry-pick:** Applies the requested commits using Git's native logic.
+* **Format:** The CommitFormatter class parses the commit bodies, cleans markdown, extracts trailers, and merges them.
+* **Publish:** Creates a PR via gh or saves a pull_request_<timestamp>.md file.
