@@ -13,6 +13,8 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
 - **Optionally:**
   - Updates the base branch before picking.
   - Choice between direct GitHub PR creation (`gh`) or generating a structured `.md` file.
+  - Creates draft pull requests with `--draft`.
+  - Opens the configured editor before GitHub CLI submission with `--editor` (or `--edit`).
 
 ## Prerequisites
 
@@ -62,6 +64,12 @@ Cherry-pick a range to `main` and output a Markdown file:
 
 ```bash
 git-cp-pr -b main --mode md abc1234..def5678
+```
+
+Create a draft pull request and edit its title and body before submitting:
+
+```bash
+git-cp-pr --draft --editor abc1234
 ```
 
 ## How It Works

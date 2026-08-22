@@ -143,6 +143,8 @@ def main():
     parser.add_argument("-n", "--name", default="", help="Specify custom branch name")
     parser.add_argument("-u", "--update-base", action="store_true", help="Update/pull the base branch from remote (default: disabled)")
     parser.add_argument("--mode", choices=["gh", "md"], help="Force PR creation mode: 'gh' (GitHub CLI) or 'md' (Markdown file)")
+    parser.add_argument("--draft", action="store_true", help="Create the pull request as a draft")
+    parser.add_argument("-e", "--editor", "--edit", action="store_true", help="Open an editor to edit the PR title and body before GitHub CLI submission")
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args()
@@ -241,9 +243,12 @@ def main():
 
     if run_mode == "gh":
         print_status("🌐", "Creating Pull Request via 'gh' tool...")
-        gh_process = subprocess.run(
-            ["gh", "pr", "create", "--base", args.base, "--title", pr_title, "--body", pr_body]
-        )
+        gh_cmd = ["gh", "pr", "create", "--base", args.base, "--title", pr_title, "--body", pr_body]
+        if args.draft:
+            gh_cmd.append("--draft")
+        if args.editor:
+            gh_cmd.append("--editor")
+        gh_process = subprocess.run(gh_cmd)
         if gh_process.returncode == 0:
             print_status("✨", "Successfully created Pull Request via GitHub CLI! 🎉", Color.GREEN)
         else:
