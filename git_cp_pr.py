@@ -6,6 +6,8 @@ import sys
 import time
 from typing import List, Dict, Tuple
 
+__version__ = "1.0.0"
+
 class Color:
     # Use ANSI codes, checking if terminal supports color (enabled by default)
     RED = "\033[0;31m"
@@ -141,6 +143,7 @@ def main():
     parser.add_argument("-n", "--name", default="", help="Specify custom branch name")
     parser.add_argument("-u", "--update-base", action="store_true", help="Update/pull the base branch from remote (default: disabled)")
     parser.add_argument("--mode", choices=["gh", "md"], help="Force PR creation mode: 'gh' (GitHub CLI) or 'md' (Markdown file)")
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args()
 
