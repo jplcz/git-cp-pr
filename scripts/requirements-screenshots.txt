@@ -1,2 +1,3 @@
 Pillow>=8.0
 PyVirtualDisplay>=3.0
+CairoSVG>=2.7

@@ -75,6 +75,7 @@ class CommitPicker(tk.Tk):
         self.title("git-cp-pr commit picker")
         self.geometry("1100x720")
         self.minsize(800, 520)
+        self._window_icon = self._load_window_icon()
         self.repo_dir = Path.cwd()
         self.cli_script = Path(__file__).resolve().with_name("git_cp_pr.py")
         self.commits: Dict[str, Dict[str, str]] = {}
@@ -95,6 +96,34 @@ class CommitPicker(tk.Tk):
         self._build_ui()
         self._refresh_repository()
         self.after(100, self._poll_output)
+
+    def _load_window_icon(self):
+        icon_directories = (
+            Path(__file__).resolve().parent,
+            Path(sys.prefix) / "share" / "git-cp-pr",
+        )
+        if sys.platform.startswith("win"):
+            for directory in icon_directories:
+                icon_path = directory / "icon.ico"
+                if not icon_path.is_file():
+                    continue
+                try:
+                    self.iconbitmap(default=str(icon_path))
+                    break
+                except tk.TclError:
+                    continue
+
+        for directory in icon_directories:
+            icon_path = directory / "icon.png"
+            if not icon_path.is_file():
+                continue
+            try:
+                icon = tk.PhotoImage(file=icon_path)
+                self.iconphoto(True, icon)
+                return icon
+            except tk.TclError:
+                continue
+        return None
 
     def _configure_style(self) -> None:
         self.configure(background="#f4f1ea")

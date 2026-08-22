@@ -157,6 +157,15 @@ On macOS or Windows, install Pillow and run the same script from a graphical
 session. On Linux the helper uses a hidden Xvfb display, so it does not capture
 the desktop or move/control the mouse pointer.
 
+The GUI window icons are generated from the root `icon.svg` as `icon.png` and
+`icon.ico`. Tkinter uses the PNG on macOS/Linux and the ICO on Windows. After
+changing the SVG, regenerate both formats with:
+
+```bash
+python3 -m pip install -r scripts/requirements-screenshots.txt
+python3 scripts/generate_icon.py
+```
+
 ## Examples
 
 Cherry-pick a single commit to `master`:

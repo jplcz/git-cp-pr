@@ -24,5 +24,8 @@ git-cp-pr-gui = "git_cp_pr_gui:main"
 [tool.setuptools]
 py-modules = ["git_cp_pr", "git_cp_pr_gui"]
 
+[tool.setuptools.data-files]
+"share/git-cp-pr" = ["icon.png", "icon.ico"]
+
 [tool.setuptools.dynamic]
 version = { attr = "git_cp_pr.__version__" }
