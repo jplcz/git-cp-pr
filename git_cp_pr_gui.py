@@ -113,7 +113,6 @@ class CommitPicker(tk.Tk):
         self.all_branches = tk.BooleanVar(value=False)
         self.mode = tk.StringVar(value="gh")
         self.draft = tk.BooleanVar()
-        self.editor = tk.BooleanVar()
         self.dry_run = tk.BooleanVar()
         self.displayed_history = tk.StringVar(value=self._tr("Loading..."))
         self.status = tk.StringVar(value=self._tr("Loading commits..."))
@@ -221,7 +220,6 @@ class CommitPicker(tk.Tk):
             ("update_base", self.update_base),
             ("all_branches", self.all_branches),
             ("draft", self.draft),
-            ("editor", self.editor),
             ("dry_run", self.dry_run),
         ):
             value = preferences.get(name)
@@ -243,7 +241,6 @@ class CommitPicker(tk.Tk):
             "all_branches": self.all_branches.get(),
             "mode": self.mode.get(),
             "draft": self.draft.get(),
-            "editor": self.editor.get(),
             "dry_run": self.dry_run.get(),
             "language": self.language.get(),
         }
@@ -347,8 +344,6 @@ class CommitPicker(tk.Tk):
         markdown_mode_radio.pack(side="left", padx=(8, 0))
         draft_check = ttk.Checkbutton(options, text=self._tr("Draft"), variable=self.draft)
         draft_check.pack(side="left", padx=(20, 0))
-        editor_check = ttk.Checkbutton(options, text=self._tr("Open editor"), variable=self.editor)
-        editor_check.pack(side="left", padx=(12, 0))
         dry_run_check = ttk.Checkbutton(options, text=self._tr("Dry run"), variable=self.dry_run)
         dry_run_check.pack(side="left", padx=(12, 0))
 
@@ -411,7 +406,6 @@ class CommitPicker(tk.Tk):
         Tooltip(github_mode_radio, self._tr("Create the PR with the GitHub CLI."))
         Tooltip(markdown_mode_radio, self._tr("Write PR details to a Markdown file instead of submitting with gh."))
         Tooltip(draft_check, self._tr("Pass --draft when creating the GitHub PR."))
-        Tooltip(editor_check, self._tr("Pass --editor to gh so you can edit the PR before submission."))
         Tooltip(dry_run_check, self._tr("Create the new branch only. Do not cherry-pick commits or push anything."))
 
         self.bottom_tabs = ttk.Notebook(self)
@@ -691,8 +685,6 @@ class CommitPicker(tk.Tk):
         command.extend(["--mode", self.mode.get()])
         if self.draft.get():
             command.append("--draft")
-        if self.editor.get():
-            command.append("--editor")
         if self.dry_run.get():
             command.append("--dry-run")
         command.extend(selected)
