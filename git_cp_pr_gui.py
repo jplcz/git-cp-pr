@@ -2,6 +2,8 @@
 """Tkinter frontend for selecting commits and running git-cp-pr."""
 
 import json
+import gettext
+import locale
 import os
 import queue
 import re
@@ -19,6 +21,18 @@ from git_cp_pr import __version__
 
 COMMIT_SEPARATOR = "\x1f"
 PROJECT_PAGE_URL = "https://jplcz.github.io/git-cp-pr/"
+SUPPORTED_LANGUAGES = ("en", "pl")
+GETTEXT_DOMAIN = "git_cp_pr_gui"
+LOCALE_DIR = Path(__file__).resolve().with_name("locale")
+
+
+class PoFileTranslations(gettext.NullTranslations):
+    def __init__(self, catalog: Dict[str, str]) -> None:
+        super().__init__()
+        self.catalog = catalog
+
+    def gettext(self, message: str) -> str:
+        return self.catalog.get(message, message)
 COMMIT_PATTERN = re.compile(
     r"^(?P<graph>[ |\\/*]+)?(?P<hash>[0-9a-f]{40})"
     + re.escape(COMMIT_SEPARATOR)
@@ -78,7 +92,10 @@ class Tooltip:
 class CommitPicker(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("git-cp-pr commit picker")
+        self.language = tk.StringVar(value=self._detect_language())
+        self.translations: gettext.NullTranslations = gettext.NullTranslations()
+        self._load_translations()
+        self.title(self._tr("git-cp-pr commit picker"))
         self.geometry("1100x720")
         self.minsize(800, 520)
         self.repo_dir = Path.cwd()
@@ -97,16 +114,90 @@ class CommitPicker(tk.Tk):
         self.draft = tk.BooleanVar()
         self.editor = tk.BooleanVar()
         self.dry_run = tk.BooleanVar()
-        self.displayed_history = tk.StringVar(value="Loading...")
-        self.status = tk.StringVar(value="Loading commits...")
-        self.diff_status = tk.StringVar(value="Select a commit checkbox to preview its diff")
+        self.displayed_history = tk.StringVar(value=self._tr("Loading..."))
+        self.status = tk.StringVar(value=self._tr("Loading commits..."))
+        self.diff_status = tk.StringVar(value=self._tr("Select a commit checkbox to preview its diff"))
 
         self._load_preferences()
+        self.title(self._tr("git-cp-pr commit picker"))
+        self.displayed_history.set(self._tr("Loading..."))
+        self.status.set(self._tr("Loading commits..."))
+        self.diff_status.set(self._tr("Select a commit checkbox to preview its diff"))
         self.protocol("WM_DELETE_WINDOW", self._close)
         self._configure_style()
         self._build_ui()
         self._refresh_repository()
         self.after(100, self._poll_output)
+
+    def _normalize_language(self, language: str) -> str:
+        normalized = (language or "").split(".", 1)[0].split("_", 1)[0].split("-", 1)[0].lower()
+        return normalized if normalized in SUPPORTED_LANGUAGES else "en"
+
+    def _parse_po_file(self, file_path: Path) -> Dict[str, str]:
+        def unescape_po(value: str) -> str:
+            return bytes(value, "utf-8").decode("unicode_escape")
+
+        catalog: Dict[str, str] = {}
+        current_msgid: Optional[str] = None
+        current_msgstr: Optional[str] = None
+        active_field: Optional[str] = None
+
+        for raw_line in file_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("msgid "):
+                if current_msgid is not None and current_msgstr is not None and current_msgid:
+                    catalog[current_msgid] = current_msgstr
+                current_msgid = unescape_po(line[6:].strip().strip('"'))
+                current_msgstr = ""
+                active_field = "msgid"
+                continue
+            if line.startswith("msgstr "):
+                current_msgstr = unescape_po(line[7:].strip().strip('"'))
+                active_field = "msgstr"
+                continue
+            if line.startswith('"') and line.endswith('"') and active_field:
+                value = unescape_po(line.strip('"'))
+                if active_field == "msgid" and current_msgid is not None:
+                    current_msgid += value
+                elif active_field == "msgstr" and current_msgstr is not None:
+                    current_msgstr += value
+
+        if current_msgid is not None and current_msgstr is not None and current_msgid:
+            catalog[current_msgid] = current_msgstr
+        return catalog
+
+    def _load_translations(self) -> None:
+        language = self._normalize_language(self.language.get())
+        language_po = LOCALE_DIR / language / "LC_MESSAGES" / f"{GETTEXT_DOMAIN}.po"
+
+        try:
+            if language == "en" or not language_po.is_file():
+                self.translations = gettext.NullTranslations()
+            else:
+                self.translations = PoFileTranslations(self._parse_po_file(language_po))
+        except OSError:
+            self.translations = gettext.NullTranslations()
+
+    def _detect_language(self) -> str:
+        for candidate in (
+            os.environ.get("LC_ALL"),
+            os.environ.get("LC_MESSAGES"),
+            os.environ.get("LANG"),
+            locale.getlocale()[0],
+            locale.getdefaultlocale()[0] if hasattr(locale, "getdefaultlocale") else None,
+        ):
+            if not candidate:
+                continue
+            normalized = self._normalize_language(candidate)
+            if normalized in SUPPORTED_LANGUAGES:
+                return normalized
+        return "en"
+
+    def _tr(self, key: str, **kwargs: object) -> str:
+        text = self.translations.gettext(key)
+        return text.format(**kwargs) if kwargs else text
 
     def _preferences_path(self) -> Path:
         if sys.platform.startswith("win"):
@@ -134,6 +225,10 @@ class CommitPicker(tk.Tk):
             value = preferences.get(name)
             if isinstance(value, bool):
                 variable.set(value)
+        language = preferences.get("language")
+        if isinstance(language, str):
+            self.language.set(self._normalize_language(language))
+            self._load_translations()
         mode = preferences.get("mode")
         if mode in ("gh", "md"):
             self.mode.set(mode)
@@ -148,6 +243,7 @@ class CommitPicker(tk.Tk):
             "draft": self.draft.get(),
             "editor": self.editor.get(),
             "dry_run": self.dry_run.get(),
+            "language": self.language.get(),
         }
         path = self._preferences_path()
         try:
@@ -219,7 +315,7 @@ class CommitPicker(tk.Tk):
 
         header = ttk.Frame(self, style="Header.TFrame", padding=(20, 16))
         header.grid(row=0, column=0, sticky="ew")
-        ttk.Label(header, text="Cherry-pick workspace", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(header, text=self._tr("Cherry-pick workspace"), style="Header.TLabel").pack(anchor="w")
         ttk.Label(header, text=str(self.repo_dir), style="Subheader.TLabel").pack(anchor="w", pady=(4, 0))
 
         controls = ttk.Frame(self, padding=12)
@@ -227,46 +323,50 @@ class CommitPicker(tk.Tk):
         controls.columnconfigure(1, weight=1)
         controls.columnconfigure(3, weight=1)
 
-        base_label = ttk.Label(controls, text="PR base (target)")
+        base_label = ttk.Label(controls, text=self._tr("PR base (target)"))
         base_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.base_combo = ttk.Combobox(controls, textvariable=self.base_branch, state="readonly")
         self.base_combo.grid(row=0, column=1, sticky="ew", padx=(0, 16))
-        branch_label = ttk.Label(controls, text="New branch")
+        branch_label = ttk.Label(controls, text=self._tr("New branch"))
         branch_label.grid(row=0, column=2, sticky="w", padx=(0, 8))
         branch_entry = ttk.Entry(controls, textvariable=self.branch_name)
         branch_entry.grid(row=0, column=3, sticky="ew")
 
         options = ttk.Frame(controls)
         options.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(12, 0))
-        all_branches_check = ttk.Checkbutton(options, text="All branches in tree (view only)", variable=self.all_branches, command=self._load_commits)
+        all_branches_check = ttk.Checkbutton(options, text=self._tr("All branches in tree (view only)"), variable=self.all_branches, command=self._load_commits)
         all_branches_check.pack(side="left")
-        update_base_check = ttk.Checkbutton(options, text="Update base", variable=self.update_base)
+        update_base_check = ttk.Checkbutton(options, text=self._tr("Update base"), variable=self.update_base)
         update_base_check.pack(side="left")
-        ttk.Label(options, text="PR mode:").pack(side="left", padx=(20, 6))
-        github_mode_radio = ttk.Radiobutton(options, text="GitHub CLI", variable=self.mode, value="gh")
+        ttk.Label(options, text=self._tr("PR mode:")).pack(side="left", padx=(20, 6))
+        github_mode_radio = ttk.Radiobutton(options, text=self._tr("GitHub CLI"), variable=self.mode, value="gh")
         github_mode_radio.pack(side="left")
-        markdown_mode_radio = ttk.Radiobutton(options, text="Markdown file", variable=self.mode, value="md")
+        markdown_mode_radio = ttk.Radiobutton(options, text=self._tr("Markdown file"), variable=self.mode, value="md")
         markdown_mode_radio.pack(side="left", padx=(8, 0))
-        draft_check = ttk.Checkbutton(options, text="Draft", variable=self.draft)
+        draft_check = ttk.Checkbutton(options, text=self._tr("Draft"), variable=self.draft)
         draft_check.pack(side="left", padx=(20, 0))
-        editor_check = ttk.Checkbutton(options, text="Open editor", variable=self.editor)
+        editor_check = ttk.Checkbutton(options, text=self._tr("Open editor"), variable=self.editor)
         editor_check.pack(side="left", padx=(12, 0))
-        dry_run_check = ttk.Checkbutton(options, text="Dry run", variable=self.dry_run)
+        dry_run_check = ttk.Checkbutton(options, text=self._tr("Dry run"), variable=self.dry_run)
         dry_run_check.pack(side="left", padx=(12, 0))
+        ttk.Label(options, text=self._tr("Language:")).pack(side="right", padx=(8, 4))
+        language_selector = ttk.Combobox(options, state="readonly", width=9, values=list(SUPPORTED_LANGUAGES), textvariable=self.language)
+        language_selector.pack(side="right")
+        language_selector.bind("<<ComboboxSelected>>", self._on_language_change)
 
-        ttk.Label(controls, text="Displayed history").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(10, 0))
+        ttk.Label(controls, text=self._tr("Displayed history")).grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(10, 0))
         displayed_label = ttk.Label(controls, textvariable=self.displayed_history)
         displayed_label.grid(row=2, column=1, columnspan=3, sticky="w", pady=(10, 0))
 
         toolbar = ttk.Frame(self, padding=(12, 0, 12, 8))
         toolbar.grid(row=3, column=0, sticky="ew")
-        refresh_button = ttk.Button(toolbar, text="Refresh", command=self._refresh_repository)
+        refresh_button = ttk.Button(toolbar, text=self._tr("Refresh"), command=self._refresh_repository)
         refresh_button.pack(side="left")
-        select_all_button = ttk.Button(toolbar, text="Select all", command=self._select_all)
+        select_all_button = ttk.Button(toolbar, text=self._tr("Select all"), command=self._select_all)
         select_all_button.pack(side="left", padx=(8, 0))
-        clear_button = ttk.Button(toolbar, text="Clear selection", command=self._clear_selection)
+        clear_button = ttk.Button(toolbar, text=self._tr("Clear selection"), command=self._clear_selection)
         clear_button.pack(side="left", padx=(8, 0))
-        help_button = ttk.Button(toolbar, text="Help", command=self._show_help)
+        help_button = ttk.Button(toolbar, text=self._tr("Help"), command=self._show_help)
         help_button.pack(side="left", padx=(8, 0))
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
 
@@ -281,12 +381,12 @@ class CommitPicker(tk.Tk):
             selectmode="browse",
         )
         headings = {
-            "selected": "Pick",
-            "graph": "Tree",
-            "hash": "Commit",
-            "date": "Date",
-            "author": "Author",
-            "subject": "Subject",
+            "selected": self._tr("Pick"),
+            "graph": self._tr("Tree"),
+            "hash": self._tr("Commit"),
+            "date": self._tr("Date"),
+            "author": self._tr("Author"),
+            "subject": self._tr("Subject"),
         }
         widths = {"selected": 52, "graph": 100, "hash": 90, "date": 100, "author": 160, "subject": 460}
         for column, heading in headings.items():
@@ -299,28 +399,28 @@ class CommitPicker(tk.Tk):
         self.tree.tag_configure("picked", background="#e0efe8", foreground="#173b4d")
         self.tree.bind("<Button-1>", self._toggle_row)
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
-        Tooltip(base_label, "Branch the new PR will target. This is not the history currently displayed.")
-        Tooltip(self.base_combo, "Select the base branch used by the cherry-pick command and PR.")
-        Tooltip(branch_label, "Optional name for the new cherry-pick branch.")
-        Tooltip(branch_entry, "Optional name for the new cherry-pick branch.")
-        Tooltip(refresh_button, "Reload branches and commits from the launch-directory repository.")
-        Tooltip(select_all_button, "Select every commit currently displayed.")
-        Tooltip(clear_button, "Clear all commit selections.")
-        Tooltip(help_button, "Show an explanation of the GUI workflow and branch scopes.")
-        Tooltip(self.tree, "Click the Pick checkbox to select or deselect a commit for cherry-picking.")
-        Tooltip(all_branches_check, "Only expands the displayed Git tree to local and remote branches. It does not select or add commits to the cherry-pick.")
-        Tooltip(update_base_check, "Pull the selected PR base branch before cherry-picking.")
-        Tooltip(github_mode_radio, "Create the PR with the GitHub CLI.")
-        Tooltip(markdown_mode_radio, "Write PR details to a Markdown file instead of submitting with gh.")
-        Tooltip(draft_check, "Pass --draft when creating the GitHub PR.")
-        Tooltip(editor_check, "Pass --editor to gh so you can edit the PR before submission.")
-        Tooltip(dry_run_check, "Create the new branch only. Do not cherry-pick commits or push anything.")
+        Tooltip(base_label, self._tr("Branch the new PR will target. This is not the history currently displayed."))
+        Tooltip(self.base_combo, self._tr("Select the base branch used by the cherry-pick command and PR."))
+        Tooltip(branch_label, self._tr("Optional name for the new cherry-pick branch."))
+        Tooltip(branch_entry, self._tr("Optional name for the new cherry-pick branch."))
+        Tooltip(refresh_button, self._tr("Reload branches and commits from the launch-directory repository."))
+        Tooltip(select_all_button, self._tr("Select every commit currently displayed."))
+        Tooltip(clear_button, self._tr("Clear all commit selections."))
+        Tooltip(help_button, self._tr("Show an explanation of the GUI workflow and branch scopes."))
+        Tooltip(self.tree, self._tr("Click the Pick checkbox to select or deselect a commit for cherry-picking."))
+        Tooltip(all_branches_check, self._tr("Only expands the displayed Git tree to local and remote branches. It does not select or add commits to the cherry-pick."))
+        Tooltip(update_base_check, self._tr("Pull the selected PR base branch before cherry-picking."))
+        Tooltip(github_mode_radio, self._tr("Create the PR with the GitHub CLI."))
+        Tooltip(markdown_mode_radio, self._tr("Write PR details to a Markdown file instead of submitting with gh."))
+        Tooltip(draft_check, self._tr("Pass --draft when creating the GitHub PR."))
+        Tooltip(editor_check, self._tr("Pass --editor to gh so you can edit the PR before submission."))
+        Tooltip(dry_run_check, self._tr("Create the new branch only. Do not cherry-pick commits or push anything."))
 
         self.bottom_tabs = ttk.Notebook(self)
         self.bottom_tabs.grid(row=4, column=0, sticky="nsew", padx=12, pady=(0, 8))
 
         preview_frame = ttk.Frame(self.bottom_tabs, padding=8)
-        self.bottom_tabs.add(preview_frame, text="Diff preview")
+        self.bottom_tabs.add(preview_frame, text=self._tr("Diff preview"))
         preview_frame.columnconfigure(0, weight=1)
         preview_frame.rowconfigure(1, weight=1)
         ttk.Label(preview_frame, textvariable=self.diff_status, style="Muted.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 6))
@@ -338,7 +438,7 @@ class CommitPicker(tk.Tk):
         self.diff_preview.configure(yscrollcommand=preview_y_scrollbar.set, xscrollcommand=preview_x_scrollbar.set)
 
         self.output_tab = ttk.Frame(self.bottom_tabs, padding=8)
-        self.bottom_tabs.add(self.output_tab, text="Command output")
+        self.bottom_tabs.add(self.output_tab, text=self._tr("Command output"))
         self.bottom_tabs.tab(self.output_tab, state="hidden")
         output_frame = ttk.Frame(self.output_tab)
         output_frame.grid(row=0, column=0, sticky="nsew")
@@ -358,7 +458,7 @@ class CommitPicker(tk.Tk):
         footer_details.pack(side="left", fill="x", expand=True, padx=(0, 16))
         warning_label = ttk.Label(
             footer_details,
-            text="Warning: this checks out branches, changes the worktree, cherry-picks, and pushes the new branch.",
+            text=self._tr("Warning: this checks out branches, changes the worktree, cherry-picks, and pushes the new branch."),
             style="Warning.TLabel",
             justify="left",
             wraplength=720,
@@ -366,13 +466,23 @@ class CommitPicker(tk.Tk):
         warning_label.pack(anchor="w", fill="x")
         footer_meta = ttk.Frame(footer_details)
         footer_meta.pack(anchor="w", fill="x", pady=(6, 0))
-        ttk.Label(footer_meta, text=f"Version {__version__}", style="Muted.TLabel").pack(side="left")
-        project_link = ttk.Label(footer_meta, text="Project page", style="Link.TLabel", cursor="hand2")
+        ttk.Label(footer_meta, text=self._tr("Version {version}", version=__version__), style="Muted.TLabel").pack(side="left")
+        project_link = ttk.Label(footer_meta, text=self._tr("Project page"), style="Link.TLabel", cursor="hand2")
         project_link.pack(side="left", padx=(14, 0))
         project_link.bind("<Button-1>", lambda _event: self._open_project_page())
-        Tooltip(project_link, "Open the GitHub Pages project site.")
-        self.run_button = ttk.Button(footer, text="Cherry-pick selected commits", style="Accent.TButton", command=self._run_cli)
+        Tooltip(project_link, self._tr("Open the GitHub Pages project site."))
+        self.run_button = ttk.Button(footer, text=self._tr("Cherry-pick selected commits"), style="Accent.TButton", command=self._run_cli)
         self.run_button.pack(side="right")
+
+    def _on_language_change(self, _event: tk.Event) -> None:
+        self.language.set(self._normalize_language(self.language.get()))
+        self._load_translations()
+        self._save_preferences()
+        self.title(self._tr("git-cp-pr commit picker"))
+        for child in self.winfo_children():
+            child.destroy()
+        self._build_ui()
+        self._refresh_repository()
 
     def _git(self, *args: str) -> str:
         result = subprocess.run(
@@ -390,7 +500,7 @@ class CommitPicker(tk.Tk):
             branches = [branch.strip() for branch in self._git("branch", "--format=%(refname:short)").splitlines()]
             current = self._git("branch", "--show-current").strip()
             self.displayed_history.set(
-                "All local and remote branches in tree" if self.all_branches.get() else (current or "Detached HEAD")
+                self._tr("All local and remote branches in tree") if self.all_branches.get() else (current or self._tr("Detached HEAD"))
             )
             self.base_combo["values"] = branches
             if self.base_branch.get() not in branches:
@@ -401,8 +511,8 @@ class CommitPicker(tk.Tk):
                 self.base_branch.set(default_base)
             self._load_commits()
         except (OSError, RuntimeError) as error:
-            self.status.set("Repository unavailable")
-            messagebox.showerror("Unable to load repository", str(error))
+            self.status.set(self._tr("Repository unavailable"))
+            messagebox.showerror(self._tr("Unable to load repository"), str(error))
 
     def _load_commits(self) -> None:
         log_args = ["log"]
@@ -431,17 +541,14 @@ class CommitPicker(tk.Tk):
                 iid=commit_hash,
                 values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
             )
-        self._set_diff_preview_text("Select a commit checkbox to preview its diff\n")
-        self.diff_status.set("Select a commit checkbox to preview its diff")
-        self.status.set(f"{len(self.commits)} commits loaded")
+        self._set_diff_preview_text(self._tr("Select a commit checkbox to preview its diff") + "\n")
+        self.diff_status.set(self._tr("Select a commit checkbox to preview its diff"))
+        self.status.set(self._tr("{count} commits loaded", count=len(self.commits)))
 
     def _show_help(self) -> None:
         messagebox.showinfo(
-            "git-cp-pr GUI Help",
-            "Select commits using the Pick checkboxes, then choose the PR options and run the workflow.\n\n"
-            "Displayed history is the checked-out branch by default. Enable All branches in tree to view commits reachable from local and remote branches. This only changes what is displayed; it does not select or add any commits to the cherry-pick.\n\n"
-            "PR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\n"
-            "Before running, make sure the worktree is clean and the selected commits apply cleanly. The workflow needs a writable repository and remote; GitHub CLI mode also needs an authenticated gh installation. Conflicts or cancellation remove the temporary branch, while successful runs keep it and return to the original branch.",
+            self._tr("git-cp-pr GUI Help"),
+            self._tr("Select commits using the Pick checkboxes, then choose the PR options and run the workflow.\n\nDisplayed history is the checked-out branch by default. Enable All branches in tree to view commits reachable from local and remote branches. This only changes what is displayed; it does not select or add any commits to the cherry-pick.\n\nPR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\nBefore running, make sure the worktree is clean and the selected commits apply cleanly. The workflow needs a writable repository and remote; GitHub CLI mode also needs an authenticated gh installation. Conflicts or cancellation remove the temporary branch, while successful runs keep it and return to the original branch."),
         )
 
     def _toggle_row(self, event: tk.Event) -> None:
@@ -544,22 +651,22 @@ class CommitPicker(tk.Tk):
                     commit_hash = picked[0]
 
         if commit_hash is None:
-            self.diff_status.set("Select a commit row or checkbox to preview its diff")
-            self._set_diff_preview_text("Select a commit row or checkbox to preview its diff\n")
+            self.diff_status.set(self._tr("Select a commit row or checkbox to preview its diff"))
+            self._set_diff_preview_text(self._tr("Select a commit row or checkbox to preview its diff") + "\n")
             return
 
         picked_count = len(self._selected_commits())
         commit_meta = self.commits.get(commit_hash, {})
         summary = f"{commit_meta.get('short', commit_hash[:8])} - {commit_meta.get('subject', '')}".strip()
         if picked_count > 1:
-            self.diff_status.set(f"Showing {summary} ({picked_count} commits checked)")
+            self.diff_status.set(self._tr("Showing {summary} ({count} commits checked)", summary=summary, count=picked_count))
         else:
-            self.diff_status.set(f"Showing {summary}")
+            self.diff_status.set(self._tr("Showing {summary}", summary=summary))
 
         try:
             self._set_diff_preview_text(self._commit_diff(commit_hash))
         except (OSError, RuntimeError) as error:
-            self._set_diff_preview_text(f"Failed to load diff for {commit_hash}: {error}\n")
+            self._set_diff_preview_text(self._tr("Failed to load diff for {commit}: {error}\n", commit=commit_hash, error=error))
 
     def _build_command(self, selected: List[str]) -> List[str]:
         command = [sys.executable, str(self.cli_script)]
@@ -582,22 +689,16 @@ class CommitPicker(tk.Tk):
     def _run_cli(self) -> None:
         selected = self._selected_commits()
         if not selected:
-            messagebox.showwarning("No commits selected", "Select at least one commit to cherry-pick.")
+            messagebox.showwarning(self._tr("No commits selected"), self._tr("Select at least one commit to cherry-pick."))
             return
         if self.running:
             return
         if self.dry_run.get():
-            confirmation_message = (
-                "This will create the cherry-pick branch and apply the selected commits. It will not push anything.\n\n"
-                "The new branch will remain available, and you will return to the original branch. Continue?"
-            )
+            confirmation_message = self._tr("This will create the cherry-pick branch and apply the selected commits. It will not push anything.\n\nThe new branch will remain available, and you will return to the original branch. Continue?")
         else:
-            confirmation_message = (
-                "This will check out the PR base, change the worktree, cherry-pick the selected commits, and push a new branch.\n\n"
-                "A conflict or cancellation will abort the cherry-pick and remove the temporary branch. Continue?"
-            )
+            confirmation_message = self._tr("This will check out the PR base, change the worktree, cherry-pick the selected commits, and push a new branch.\n\nA conflict or cancellation will abort the cherry-pick and remove the temporary branch. Continue?")
         confirmed = messagebox.askyesno(
-            "Confirm cherry-pick workflow",
+            self._tr("Confirm cherry-pick workflow"),
             confirmation_message,
             icon="warning",
         )
@@ -642,11 +743,11 @@ class CommitPicker(tk.Tk):
                 elif event == "done":
                     self.running = False
                     self.run_button.configure(state="normal")
-                    self.status.set("Completed" if value == 0 else f"Command failed ({value})")
+                    self.status.set(self._tr("Completed") if value == 0 else self._tr("Command failed ({code})", code=value))
                 else:
                     self.running = False
                     self.run_button.configure(state="normal")
-                    self.status.set("Command failed")
+                    self.status.set(self._tr("Command failed"))
                     self._append_output(str(value) + "\n")
         except queue.Empty:
             pass
