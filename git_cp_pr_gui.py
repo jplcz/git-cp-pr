@@ -2,6 +2,7 @@
 """Tkinter frontend for selecting commits and running git-cp-pr."""
 
 import json
+import ast
 import gettext
 import locale
 import os
@@ -135,7 +136,8 @@ class CommitPicker(tk.Tk):
 
     def _parse_po_file(self, file_path: Path) -> Dict[str, str]:
         def unescape_po(value: str) -> str:
-            return bytes(value, "utf-8").decode("unicode_escape")
+            # Parse PO-quoted text without mangling UTF-8 characters.
+            return ast.literal_eval(f'"{value}"')
 
         catalog: Dict[str, str] = {}
         current_msgid: Optional[str] = None
@@ -349,10 +351,6 @@ class CommitPicker(tk.Tk):
         editor_check.pack(side="left", padx=(12, 0))
         dry_run_check = ttk.Checkbutton(options, text=self._tr("Dry run"), variable=self.dry_run)
         dry_run_check.pack(side="left", padx=(12, 0))
-        ttk.Label(options, text=self._tr("Language:")).pack(side="right", padx=(8, 4))
-        language_selector = ttk.Combobox(options, state="readonly", width=9, values=list(SUPPORTED_LANGUAGES), textvariable=self.language)
-        language_selector.pack(side="right")
-        language_selector.bind("<<ComboboxSelected>>", self._on_language_change)
 
         ttk.Label(controls, text=self._tr("Displayed history")).grid(row=2, column=0, sticky="w", padx=(0, 8), pady=(10, 0))
         displayed_label = ttk.Label(controls, textvariable=self.displayed_history)
@@ -471,6 +469,20 @@ class CommitPicker(tk.Tk):
         project_link.pack(side="left", padx=(14, 0))
         project_link.bind("<Button-1>", lambda _event: self._open_project_page())
         Tooltip(project_link, self._tr("Open the GitHub Pages project site."))
+
+        language_frame = ttk.Frame(footer)
+        language_frame.pack(side="right", padx=(0, 12))
+        ttk.Label(language_frame, text=self._tr("Language:")).pack(side="left", padx=(0, 6))
+        language_selector = ttk.Combobox(
+            language_frame,
+            state="readonly",
+            width=9,
+            values=list(SUPPORTED_LANGUAGES),
+            textvariable=self.language,
+        )
+        language_selector.pack(side="left")
+        language_selector.bind("<<ComboboxSelected>>", self._on_language_change)
+
         self.run_button = ttk.Button(footer, text=self._tr("Cherry-pick selected commits"), style="Accent.TButton", command=self._run_cli)
         self.run_button.pack(side="right")
 

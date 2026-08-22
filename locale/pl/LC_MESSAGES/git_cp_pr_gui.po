@@ -6,13 +6,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "git-cp-pr commit picker"
-msgstr "git-cp-pr wybor commitow"
+msgstr "git-cp-pr wybór commitów"
 
 msgid "Loading commits..."
-msgstr "Ladowanie commitow..."
+msgstr "Ładowanie commitów..."
 
 msgid "Loading..."
-msgstr "Ladowanie..."
+msgstr "Ładowanie..."
 
 msgid "Cherry-pick workspace"
 msgstr "Obszar cherry-pick"
@@ -21,13 +21,13 @@ msgid "PR base (target)"
 msgstr "Baza PR (cel)"
 
 msgid "New branch"
-msgstr "Nowa galaz"
+msgstr "Nowa gałąź"
 
 msgid "All branches in tree (view only)"
-msgstr "Wszystkie galezie w drzewie (tylko podglad)"
+msgstr "Wszystkie gałęzie w drzewie (tylko podgląd)"
 
 msgid "Update base"
-msgstr "Zaktualizuj baze"
+msgstr "Zaktualizuj bazę"
 
 msgid "PR mode:"
 msgstr "Tryb PR:"
@@ -42,28 +42,28 @@ msgid "Draft"
 msgstr "Szkic"
 
 msgid "Open editor"
-msgstr "Otworz edytor"
+msgstr "Otwórz edytor"
 
 msgid "Dry run"
 msgstr "Symulacja"
 
 msgid "Displayed history"
-msgstr "Wyswietlana historia"
+msgstr "Wyświetlana historia"
 
 msgid "Refresh"
-msgstr "Odswiez"
+msgstr "Odswież"
 
 msgid "Select all"
 msgstr "Zaznacz wszystko"
 
 msgid "Clear selection"
-msgstr "Wyczysc zaznaczenie"
+msgstr "Wyczyść zaznaczenie"
 
 msgid "Help"
 msgstr "Pomoc"
 
 msgid "Language:"
-msgstr "Jezyk:"
+msgstr "Język:"
 
 msgid "Pick"
 msgstr "Wybierz"
@@ -84,10 +84,10 @@ msgid "Subject"
 msgstr "Temat"
 
 msgid "Diff preview"
-msgstr "Podglad diff"
+msgstr "Podgląd diff"
 
 msgid "Command output"
-msgstr "Wyjscie polecenia"
+msgstr "Wyjście polecenia"
 
 msgid "Version {version}"
 msgstr "Wersja {version}"
@@ -96,49 +96,49 @@ msgid "Project page"
 msgstr "Strona projektu"
 
 msgid "Cherry-pick selected commits"
-msgstr "Cherry-pick zaznaczonych commitow"
+msgstr "Cherry-pick zaznaczonych commitów"
 
 msgid "Warning: this checks out branches, changes the worktree, cherry-picks, and pushes the new branch."
-msgstr "Uwaga: to przelacza galezie, modyfikuje worktree, wykonuje cherry-pick i wypycha nowa galaz."
+msgstr "Uwaga: to przełącza gałęzie, modyfikuje worktree, wykonuje cherry-pick i wypycha nową gałąź."
 
 msgid "Repository unavailable"
-msgstr "Repozytorium niedostepne"
+msgstr "Repozytorium niedostępne"
 
 msgid "Unable to load repository"
-msgstr "Nie mozna zaladowac repozytorium"
+msgstr "Nie można załadować repozytorium"
 
 msgid "All local and remote branches in tree"
-msgstr "Wszystkie lokalne i zdalne galezie w drzewie"
+msgstr "Wszystkie lokalne i zdalne gałęzie w drzewie"
 
 msgid "Detached HEAD"
 msgstr "Detached HEAD"
 
 msgid "{count} commits loaded"
-msgstr "Wczytano commitow: {count}"
+msgstr "Wczytano commitów: {count}"
 
 msgid "git-cp-pr GUI Help"
 msgstr "Pomoc GUI git-cp-pr"
 
 msgid "Select commits using the Pick checkboxes, then choose the PR options and run the workflow.\n\nDisplayed history is the checked-out branch by default. Enable All branches in tree to view commits reachable from local and remote branches. This only changes what is displayed; it does not select or add any commits to the cherry-pick.\n\nPR base (target) is the branch the new PR will merge into; it is independent from the displayed commit history.\n\nBefore running, make sure the worktree is clean and the selected commits apply cleanly. The workflow needs a writable repository and remote; GitHub CLI mode also needs an authenticated gh installation. Conflicts or cancellation remove the temporary branch, while successful runs keep it and return to the original branch."
-msgstr "Wybierz commity checkboxami w kolumnie Pick, potem ustaw opcje PR i uruchom workflow.\n\nDomyslnie pokazywana jest historia aktualnie checkoutowanej galezi. Opcja Wszystkie galezie w drzewie pokazuje commity osiagalne z lokalnych i zdalnych galezi. Zmienia to tylko widok, nie dobiera commitow do cherry-pick.\n\nBaza PR (cel) to galaz, do ktorej zostanie skierowany nowy PR; jest niezalezna od wyswietlanej historii commitow.\n\nPrzed uruchomieniem upewnij sie, ze worktree jest czysty i wybrane commity da sie zastosowac bez konfliktow. Workflow wymaga zapisywalnego repozytorium i remote; tryb GitHub CLI wymaga zalogowanego gh. Konflikt lub anulowanie usuwaja tymczasowa galaz, a powodzenie zostawia ja i przywraca pierwotna galaz."
+msgstr "Wybierz commity checkboxami w kolumnie Pick, potem ustaw opcje PR i uruchom workflow.\n\nDomyślnie pokazywana jest historia aktualnie checkoutowanej gałęzi. Opcja Wszystkie gałęzie w drzewie pokazuje commity osiagalne z lokalnych i zdalnych gałęzi. Zmienia to tylko widok, nie dobiera commitów do cherry-pick.\n\nBaza PR (cel) to gałąź, do ktorej zostanie skierowany nowy PR; jest niezalezna od wyświetlanej historii commitów.\n\nPrzed uruchomieniem upewnij się, że worktree jest czysty i wybrane commity da się zastosowac bez konfliktow. Workflow wymaga zapisywalnego repozytorium i remote; tryb GitHub CLI wymaga zalogowanego gh. Konflikt lub anulowanie usuwają tymczasową gałąź, a powodzenie zostawia ją i przywraca pierwotną gałąź."
 
 msgid "No commits selected"
-msgstr "Brak zaznaczonych commitow"
+msgstr "Brak zaznaczonych commitów"
 
 msgid "Select at least one commit to cherry-pick."
 msgstr "Zaznacz co najmniej jeden commit do cherry-pick."
 
 msgid "Confirm cherry-pick workflow"
-msgstr "Potwierdz workflow cherry-pick"
+msgstr "Potwierdź workflow cherry-pick"
 
 msgid "This will create the cherry-pick branch and apply the selected commits. It will not push anything.\n\nThe new branch will remain available, and you will return to the original branch. Continue?"
-msgstr "To utworzy galaz cherry-pick i zastosuje wybrane commity. Nic nie zostanie wypchniete.\n\nNowa galaz pozostanie dostepna, a potem nastapi powrot do pierwotnej galezi. Kontynuowac?"
+msgstr "To utworzy gałąź cherry-pick i zastosuje wybrane commity. Nic nie zostanie wypchnięte.\n\nNowa gałąź pozostanie dostępna, a potem nastąpi powrót do pierwotnej gałęzi. Kontynuować?"
 
 msgid "This will check out the PR base, change the worktree, cherry-pick the selected commits, and push a new branch.\n\nA conflict or cancellation will abort the cherry-pick and remove the temporary branch. Continue?"
 msgstr "To przelaczy na baze PR, zmieni worktree, wykona cherry-pick wybranych commitow i wypchnie nowa galaz.\n\nKonflikt lub anulowanie przerwa cherry-pick i usunie tymczasowa galaz. Kontynuowac?"
 
 msgid "Completed"
-msgstr "Zakonczono"
+msgstr "Zakończono"
 
 msgid "Command failed ({code})"
 msgstr "Polecenie nieudane ({code})"
@@ -159,28 +159,28 @@ msgid "Showing {summary} ({count} commits checked)"
 msgstr "Pokazuje {summary} (zaznaczone commity: {count})"
 
 msgid "Failed to load diff for {commit}: {error}\n"
-msgstr "Nie udalo sie zaladowac diff dla {commit}: {error}\n"
+msgstr "Nie udało się załadować diff dla {commit}: {error}\n"
 
 msgid "Branch the new PR will target. This is not the history currently displayed."
-msgstr "Galaz docelowa dla nowego PR. To nie jest aktualnie wyswietlana historia."
+msgstr "Gałąź docelowa dla nowego PR. To nie jest aktualnie wyświetlana historia."
 
 msgid "Select the base branch used by the cherry-pick command and PR."
-msgstr "Wybierz baze uzywana przez cherry-pick i PR."
+msgstr "Wybierz bazę uzywaną przez cherry-pick i PR."
 
 msgid "Optional name for the new cherry-pick branch."
-msgstr "Opcjonalna nazwa nowej galezi cherry-pick."
+msgstr "Opcjonalna nazwa nowej gałęzi cherry-pick."
 
 msgid "Reload branches and commits from the launch-directory repository."
-msgstr "Wczytaj ponownie galezie i commity z repozytorium uruchomieniowego."
+msgstr "Wczytaj ponownie gałęzie i commity z repozytorium źródłowego."
 
 msgid "Select every commit currently displayed."
-msgstr "Zaznacz wszystkie aktualnie wyswietlane commity."
+msgstr "Zaznacz wszystkie aktualnie wyświetlane commity."
 
 msgid "Clear all commit selections."
-msgstr "Wyczysc wszystkie zaznaczenia commitow."
+msgstr "Wyczyść wszystkie zaznaczenia commitów."
 
 msgid "Show an explanation of the GUI workflow and branch scopes."
-msgstr "Pokaz wyjasnienie workflow GUI i zakresow galezi."
+msgstr "Pokaż wyjaśnienie workflow GUI i zakresów gałęzi."
 
 msgid "Click the Pick checkbox to select or deselect a commit for cherry-picking."
 msgstr "Kliknij checkbox w kolumnie Pick, aby zaznaczyc commit do cherry-pick."
@@ -192,19 +192,19 @@ msgid "Pull the selected PR base branch before cherry-picking."
 msgstr "Wykonaj pull dla wybranej bazy PR przed cherry-pick."
 
 msgid "Create the PR with the GitHub CLI."
-msgstr "Utworz PR przez GitHub CLI."
+msgstr "Utwórz PR przez GitHub CLI."
 
 msgid "Write PR details to a Markdown file instead of submitting with gh."
-msgstr "Zapisz szczegoly PR do pliku Markdown zamiast wysylac przez gh."
+msgstr "Zapisz szczegóły PR do pliku Markdown zamiast wysyłać przez gh."
 
 msgid "Pass --draft when creating the GitHub PR."
-msgstr "Przekaz --draft podczas tworzenia PR."
+msgstr "Przekaż --draft podczas tworzenia PR."
 
 msgid "Pass --editor to gh so you can edit the PR before submission."
-msgstr "Przekaz --editor do gh, aby edytowac PR przed wyslaniem."
+msgstr "Przekaż --editor do gh, aby edytować PR przed wyslaniem."
 
 msgid "Create the new branch only. Do not cherry-pick commits or push anything."
-msgstr "Utworz tylko nowa galaz. Bez cherry-pick i bez push."
+msgstr "Utwórz tylko nową gałąź. Bez cherry-pick i bez push."
 
 msgid "Open the GitHub Pages project site."
-msgstr "Otworz strone projektu GitHub Pages."
+msgstr "Otw,órz stronę projektu na GitHub Pages."
