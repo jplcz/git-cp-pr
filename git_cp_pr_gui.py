@@ -32,7 +32,8 @@ class CommitPicker(tk.Tk):
         self.title("git-cp-pr commit picker")
         self.geometry("1100x720")
         self.minsize(800, 520)
-        self.project_dir = Path(__file__).resolve().parent
+        self.repo_dir = Path.cwd()
+        self.cli_script = Path(__file__).resolve().with_name("git_cp_pr.py")
         self.commits: Dict[str, Dict[str, str]] = {}
         self.output_queue: queue.Queue = queue.Queue()
         self.running = False
@@ -40,6 +41,7 @@ class CommitPicker(tk.Tk):
         self.base_branch = tk.StringVar()
         self.branch_name = tk.StringVar()
         self.update_base = tk.BooleanVar()
+        self.all_branches = tk.BooleanVar(value=False)
         self.mode = tk.StringVar(value="gh")
         self.draft = tk.BooleanVar()
         self.editor = tk.BooleanVar()
@@ -67,6 +69,7 @@ class CommitPicker(tk.Tk):
 
         options = ttk.Frame(controls)
         options.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(12, 0))
+        ttk.Checkbutton(options, text="All branches", variable=self.all_branches, command=self._load_commits).pack(side="left")
         ttk.Checkbutton(options, text="Update base", variable=self.update_base).pack(side="left")
         ttk.Label(options, text="PR mode:").pack(side="left", padx=(20, 6))
         ttk.Radiobutton(options, text="GitHub CLI", variable=self.mode, value="gh").pack(side="left")
@@ -127,7 +130,7 @@ class CommitPicker(tk.Tk):
     def _git(self, *args: str) -> str:
         result = subprocess.run(
             ["git", *args],
-            cwd=self.project_dir,
+            cwd=self.repo_dir,
             text=True,
             capture_output=True,
         )
@@ -150,14 +153,16 @@ class CommitPicker(tk.Tk):
             messagebox.showerror("Unable to load repository", str(error))
 
     def _load_commits(self) -> None:
-        raw = self._git(
-            "log",
-            "--all",
+        log_args = ["log"]
+        if self.all_branches.get():
+            log_args.append("--all")
+        log_args.extend([
             "--date=short",
             "--graph",
             "--decorate",
             "--pretty=format:%H" + COMMIT_SEPARATOR + "%h" + COMMIT_SEPARATOR + "%ad" + COMMIT_SEPARATOR + "%an" + COMMIT_SEPARATOR + "%s",
-        )
+        ])
+        raw = self._git(*log_args)
         self.tree.delete(*self.tree.get_children())
         self.commits.clear()
         for line in raw.splitlines():
@@ -204,7 +209,7 @@ class CommitPicker(tk.Tk):
         ]
 
     def _build_command(self, selected: List[str]) -> List[str]:
-        command = [sys.executable, str(self.project_dir / "git_cp_pr.py")]
+        command = [sys.executable, str(self.cli_script)]
         if self.base_branch.get():
             command.extend(["--base", self.base_branch.get()])
         if self.branch_name.get().strip():
@@ -236,7 +241,7 @@ class CommitPicker(tk.Tk):
         try:
             process = subprocess.Popen(
                 command,
-                cwd=self.project_dir,
+                cwd=self.repo_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

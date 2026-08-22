@@ -112,12 +112,18 @@ allows commits to be selected with checkboxes before running the normal CLI
 workflow:
 
 ```bash
+cd /path/to/target/repository
 git-cp-pr-gui
 ```
 
+The GUI uses the directory where it is launched as the target Git repository;
+it does not use the repository containing the installed application.
+
 The GUI exposes the base branch, custom branch name, base update, PR mode,
-draft, and editor options. It invokes `git-cp-pr`'s existing Python workflow,
-so command-line and GUI behavior remain consistent.
+draft, editor, and commit-history scope options. By default it displays the
+checked-out branch; enable **All branches** to include every branch. It invokes
+`git-cp-pr`'s existing Python workflow, so command-line and GUI behavior remain
+consistent.
 
 ## Examples
 
