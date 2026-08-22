@@ -161,15 +161,27 @@ def main():
     else:
         print_status("⏭️", f"Skipping update of base branch '{args.base}' as requested.", Color.YELLOW)
 
-    # Expand commits/ranges into a chronological list of individual commit hashes
+    # Parse and validate commits safely
     expanded_commits = []
     for c in args.commits:
-        rev_list = run_command(f"git rev-list --reverse {c}")
-        if rev_list:
-            expanded_commits.extend([line.strip() for line in rev_list.splitlines() if line.strip()])
+        # If it's a range (contains '..'), expand it
+        if ".." in c:
+            rev_list = run_command(f"git rev-list --reverse {c}")
+            if rev_list:
+                expanded_commits.extend([line.strip() for line in rev_list.splitlines() if line.strip()])
+        else:
+            # Otherwise, treat it as a single commit or ref, get its full hash
+            full_hash = run_command(f"git rev-parse --verify {c}")
+            if full_hash:
+                expanded_commits.append(full_hash)
 
     if not expanded_commits:
         print_status("❌", f"No valid commits found for input: {' '.join(args.commits)}", Color.RED)
+        sys.exit(1)
+
+    # Safety check to prevent accidental massive batch picks
+    if len(expanded_commits) > 50:
+        print_status("❌", f"Safety abort: Attempting to cherry-pick {len(expanded_commits)} commits looks incorrect. Please check your commit arguments.", Color.RED)
         sys.exit(1)
 
     # Generate automatic branch name if not provided
