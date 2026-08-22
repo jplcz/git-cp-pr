@@ -106,6 +106,19 @@ install the updated project:
 python -m pip install --upgrade -e .
 ```
 
+## Git Integration
+
+After installation, Git can discover the console scripts as external commands:
+
+```bash
+git cp-pr abc1234
+git cp-pr-gui
+```
+
+Git resolves `git cp-pr` to the `git-cp-pr` executable and `git cp-pr-gui` to
+`git-cp-pr-gui`. Make sure the directory containing the installed scripts is on
+your `PATH` (`pipx ensurepath` handles this for pipx installations).
+
 ## Graphical Interface
 
 The optional cross-platform Tkinter frontend displays the Git commit graph and
