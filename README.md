@@ -24,32 +24,84 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
 
 ## Installation
 
-The recommended way to install and run this tool globally is using **pipx** (which runs the tool in an isolated environment and adds `git-cp-pr` to your system path):
+For a globally available command-line application, use **pipx**. It keeps the
+application isolated from the system Python and avoids externally managed
+Python restrictions.
+
+On Ubuntu or Debian:
 
 ```bash
+sudo apt update
+sudo apt install pipx
+pipx ensurepath
 pipx install .
 ```
 
-Alternatively, you can install it locally using `pip`:
+On macOS with Homebrew:
 
 ```bash
-python3 -m pip install --user .
+brew install pipx
+pipx ensurepath
+pipx install .
 ```
 
-Or you can use the provided automated installation script:
+On Windows PowerShell:
 
-```bash
-chmod +x install.sh
-./install.sh
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+pipx install .
 ```
 
-Or you can use:
+Open a new terminal after `ensurepath` if the `pipx` command is not found.
 
-1. Copy the `git_cp_pr.py` script somewhere into your `$PATH`.
-2. Ensure it is executable:
+For development or a project-local installation, use a virtual environment.
+This also works on systems where `pipx` is unavailable.
+
+On macOS or Linux:
 
 ```bash
-chmod +x git_cp_pr.py
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+On Windows PowerShell:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+## Upgrade
+
+From the project directory, first update the source code:
+
+```bash
+git pull
+```
+
+For an installation created with `pipx install .`, reinstall from the updated
+checkout:
+
+```bash
+pipx install --force .
+```
+
+If the package was installed from a package index instead, use:
+
+```bash
+pipx upgrade git-cp-pr
+```
+
+For a virtual environment installation, activate the existing environment and
+install the updated project:
+
+```bash
+python -m pip install --upgrade -e .
 ```
 
 ## Examples
