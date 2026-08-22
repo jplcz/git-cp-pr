@@ -155,31 +155,6 @@ All-branches view:
 
 ![GUI showing commits from all local and remote branches](docs/screenshots/gui-all-branches.png)
 
-For maintainers, `scripts/generate_demo_screenshots.py` is an internal helper
-and is not installed with the application. On Ubuntu, install its graphical
-dependencies with:
-
-```bash
-./scripts/setup_screenshot_dependencies.sh
-.venv/bin/python scripts/generate_demo_screenshots.py
-```
-
-The setup helper installs `python3`, `python3-tk`, and `xvfb` with `apt`, then
-installs the Python requirements into the project-local `.venv`.
-
-On macOS or Windows, install Pillow and run the same script from a graphical
-session. On Linux the helper uses a hidden Xvfb display, so it does not capture
-the desktop or move/control the mouse pointer.
-
-The GUI window icons are generated from the root `icon.svg` as `icon.png` and
-`icon.ico`. Tkinter uses the PNG on macOS/Linux and the ICO on Windows. After
-changing the SVG, regenerate both formats with:
-
-```bash
-python3 -m pip install -r scripts/requirements-screenshots.txt
-python3 scripts/generate_icon.py
-```
-
 ## Examples
 
 Cherry-pick a single commit to `master`:

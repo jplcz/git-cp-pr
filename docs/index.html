@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Git Cherry-Pick PR: select commits, create a branch, and open a pull request.">
+  <title>Git Cherry-Pick PR</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Git Cherry-Pick PR home">
+      <img src="icon.svg" alt="">
+      <span>git-cp-pr</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#workflow">Workflow</a>
+      <a href="#gui">GUI</a>
+      <a href="#install">Install</a>
+      <a class="nav-button" href="https://github.com/jplcz/git-cp-pr">View source <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero shell">
+      <div class="hero-copy">
+        <p class="eyebrow">Command-line and GUI utility · version 1.0.7</p>
+        <h1>Git Cherry-Pick PR</h1>
+        <p class="hero-text">A command-line and desktop tool for selecting commits, creating a temporary branch, and preparing a pull request.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#install">Installation <span aria-hidden="true">↓</span></a>
+          <a class="button button-quiet" href="https://github.com/jplcz/git-cp-pr/blob/master/README.md">Full documentation <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="terminal-line"><span>$</span> git cp-pr A..B</div>
+      </div>
+      <div class="hero-art quick-panel" aria-label="Command summary">
+        <div class="quick-panel-header"><img src="icon.svg" alt=""><span>Command summary</span></div>
+        <dl>
+          <div><dt>Input</dt><dd>Commit hash or range</dd></div>
+          <div><dt>Branch</dt><dd>New cherry-pick branch</dd></div>
+          <div><dt>Output</dt><dd>GitHub PR or Markdown file</dd></div>
+          <div><dt>Recovery</dt><dd>Original branch restored</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="signal-strip" aria-label="Key workflow properties">
+      <div class="shell signal-grid">
+        <div><strong>INPUT</strong><span>Commit hashes or ranges</span></div>
+        <div><strong>LOCAL</strong><span>Temporary branch and cherry-pick</span></div>
+        <div><strong>OUTPUT</strong><span>PR or Markdown details</span></div>
+        <div><strong>RECOVER</strong><span>Return to original branch</span></div>
+      </div>
+    </section>
+
+    <section id="workflow" class="section shell">
+      <div class="section-heading">
+        <p class="eyebrow">Workflow</p>
+        <h2>What the command does</h2>
+        <p>The tool prepares a separate cherry-pick branch from selected commits, then either creates a pull request or writes its details to Markdown.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card feature-card-dark">
+          <span class="card-index">01</span>
+          <h3>Select commits</h3>
+          <p>Pass individual commits or ranges. Commit messages become a structured PR title and body, with trailers consolidated cleanly.</p>
+          <code>git cp-pr A..B</code>
+        </article>
+        <article class="feature-card">
+          <span class="card-index">02</span>
+          <h3>Choose an output</h3>
+          <p>Create through GitHub CLI, write a Markdown brief, make it a draft, or open your editor before submission.</p>
+          <code>--draft --editor</code>
+        </article>
+        <article class="feature-card feature-card-orange">
+          <span class="card-index">03</span>
+          <h3>Use dry-run</h3>
+          <p>Dry-run applies the commits locally, leaves the branch available, and skips both the remote push and PR creation.</p>
+          <code>--dry-run</code>
+        </article>
+      </div>
+    </section>
+
+    <section id="gui" class="gui-section">
+      <div class="shell gui-layout">
+        <div class="gui-copy">
+          <p class="eyebrow">Desktop interface</p>
+          <h2>Commit selection in a tree view</h2>
+          <p>The Tkinter GUI runs from the repository you launch it in. Browse the current branch by default, expand to local and remote branches when needed, and select commits one by one.</p>
+          <ul class="check-list">
+            <li>Current branch view by default</li>
+            <li>All branches in tree, view only</li>
+            <li>Base target, draft, editor, and dry-run controls</li>
+          </ul>
+          <div class="terminal-line terminal-line-light"><span>$</span> git cp-pr-gui</div>
+        </div>
+        <figure class="screenshot-frame">
+          <img src="screenshots/gui-all-branches.png" alt="Git Cherry-Pick PR GUI showing commits from all branches">
+          <figcaption>All branches in tree expands what is visible, not what gets selected.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="install" class="section shell install-section">
+      <div class="section-heading compact-heading">
+        <p class="eyebrow">Installation</p>
+        <h2>Install and run from a repository</h2>
+        <p>pipx keeps the command isolated from your system Python and works well with modern Ubuntu, macOS, and Windows setups.</p>
+      </div>
+      <div class="install-grid">
+        <div class="install-card">
+          <span class="platform">macOS / Linux</span>
+          <pre><code>python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install git-cp-pr</code></pre>
+        </div>
+        <div class="install-card">
+          <span class="platform">Windows PowerShell</span>
+          <pre><code>py -m pip install --user pipx
+py -m pipx ensurepath
+pipx install git-cp-pr</code></pre>
+        </div>
+      </div>
+      <div class="command-example">
+        <span class="command-tag">TRY IT</span>
+        <code>cd your-repository &amp;&amp; git cp-pr --dry-run abc1234</code>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer shell">
+    <span>Git Cherry-Pick PR</span>
+    <span>CLI and GUI for selected-commit cherry-picks.</span>
+    <a href="https://github.com/jplcz/git-cp-pr/blob/master/README.md">Documentation ↗</a>
+  </footer>
+</body>
+</html>

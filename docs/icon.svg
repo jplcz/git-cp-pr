@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Git Cherry-pick PR</title>
+  <desc id="desc">An orange pull request arrow between two white commit nodes.</desc>
+  <rect width="256" height="256" rx="48" fill="#173b4d"/>
+  <path d="M64 128h112" fill="none" stroke="#d96c43" stroke-linecap="round" stroke-width="16"/>
+  <path d="m160 101 30 27-30 27" fill="none" stroke="#d96c43" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"/>
+  <circle cx="36" cy="128" r="18" fill="#f8f4e8"/>
+  <circle cx="220" cy="128" r="18" fill="#f8f4e8"/>
+</svg>
