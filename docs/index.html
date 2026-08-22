@@ -106,20 +106,26 @@
       <div class="section-heading compact-heading">
         <p class="eyebrow">Installation</p>
         <h2>Install and run from a repository</h2>
-        <p>pipx keeps the command isolated from your system Python and works well with modern Ubuntu, macOS, and Windows setups.</p>
+        <p>Clone the repository, then use pipx to install the command in an isolated environment.</p>
+      </div>
+      <div class="command-example clone-example">
+        <span class="command-tag">1 · CLONE</span>
+        <code id="clone-command">git clone https://github.com/jplcz/git-cp-pr.git &amp;&amp; cd git-cp-pr</code>
+        <button class="copy-button" type="button" data-copy-target="clone-command">Copy</button>
+        <span class="copy-status" aria-live="polite"></span>
       </div>
       <div class="install-grid">
         <div class="install-card">
-          <span class="platform">macOS / Linux</span>
+          <span class="platform">2 · macOS / Linux</span>
           <pre><code>python3 -m pip install --user pipx
 python3 -m pipx ensurepath
-pipx install git-cp-pr</code></pre>
+pipx install .</code></pre>
         </div>
         <div class="install-card">
-          <span class="platform">Windows PowerShell</span>
+          <span class="platform">2 · Windows PowerShell</span>
           <pre><code>py -m pip install --user pipx
 py -m pipx ensurepath
-pipx install git-cp-pr</code></pre>
+pipx install .</code></pre>
         </div>
       </div>
       <div class="command-example">
@@ -134,5 +140,34 @@ pipx install git-cp-pr</code></pre>
     <span>CLI and GUI for selected-commit cherry-picks.</span>
     <a href="https://github.com/jplcz/git-cp-pr/blob/master/README.md">Documentation ↗</a>
   </footer>
+  <script>
+    document.querySelectorAll("[data-copy-target]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var command = document.getElementById(button.dataset.copyTarget).textContent;
+        var status = button.parentElement.querySelector(".copy-status");
+        var copied = function () {
+          button.textContent = "Copied";
+          status.textContent = "Command copied";
+          window.setTimeout(function () {
+            button.textContent = "Copy";
+            status.textContent = "";
+          }, 1800);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(command).then(copied);
+          return;
+        }
+        var input = document.createElement("textarea");
+        input.value = command;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        if (document.execCommand("copy")) copied();
+        document.body.removeChild(input);
+      });
+    });
+  </script>
 </body>
 </html>

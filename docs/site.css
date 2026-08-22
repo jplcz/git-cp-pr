@@ -114,6 +114,9 @@ pre code { color: #f6b193; font: .94rem/1.8 var(--mono); }
 .command-example { display: flex; align-items: center; gap: 18px; margin-top: 15px; padding: 18px 20px; border: 1px solid var(--line); background: var(--paper); }
 .command-tag { color: var(--orange-deep); font: .84rem var(--mono); font-weight: 700; }
 .command-example code { font: .94rem var(--mono); overflow-wrap: anywhere; }
+.copy-button { margin-left: auto; padding: 8px 12px; border: 1px solid var(--ink); background: transparent; color: var(--ink); font: 700 .82rem var(--sans); cursor: pointer; }
+.copy-button:hover, .copy-button:focus-visible { background: var(--ink); color: var(--paper); }
+.copy-status { color: var(--orange-deep); font-size: .82rem; white-space: nowrap; }
 
 .site-footer { display: flex; justify-content: space-between; gap: 20px; padding: 28px 0 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 1rem; }
 .site-footer a { color: var(--orange-deep); font-weight: 700; }
@@ -140,5 +143,6 @@ pre code { color: #f6b193; font: .94rem/1.8 var(--mono); }
   .section, .gui-section { padding: 72px 0; }
   .install-grid { grid-template-columns: 1fr; }
   .command-example { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .copy-button { margin-left: 0; }
   .site-footer { flex-direction: column; padding-bottom: 28px; }
 }
