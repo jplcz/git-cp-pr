@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tkinter frontend for selecting commits and running git-cp-pr."""
 
+import json
+import os
 import queue
 import re
 import subprocess
@@ -93,10 +95,64 @@ class CommitPicker(tk.Tk):
         self.displayed_history = tk.StringVar(value="Loading...")
         self.status = tk.StringVar(value="Loading commits...")
 
+        self._load_preferences()
+        self.protocol("WM_DELETE_WINDOW", self._close)
         self._configure_style()
         self._build_ui()
         self._refresh_repository()
         self.after(100, self._poll_output)
+
+    def _preferences_path(self) -> Path:
+        if sys.platform.startswith("win"):
+            config_dir = Path.home() / "AppData" / "Roaming"
+        else:
+            config_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        return config_dir / "git-cp-pr" / "settings.json"
+
+    def _load_preferences(self) -> None:
+        try:
+            preferences = json.loads(self._preferences_path().read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        if not isinstance(preferences, dict):
+            return
+        self.base_branch.set(str(preferences.get("base_branch", "")))
+        self.branch_name.set(str(preferences.get("branch_name", "")))
+        for name, variable in (
+            ("update_base", self.update_base),
+            ("all_branches", self.all_branches),
+            ("draft", self.draft),
+            ("editor", self.editor),
+            ("dry_run", self.dry_run),
+        ):
+            value = preferences.get(name)
+            if isinstance(value, bool):
+                variable.set(value)
+        mode = preferences.get("mode")
+        if mode in ("gh", "md"):
+            self.mode.set(mode)
+
+    def _save_preferences(self) -> None:
+        preferences = {
+            "base_branch": self.base_branch.get(),
+            "branch_name": self.branch_name.get(),
+            "update_base": self.update_base.get(),
+            "all_branches": self.all_branches.get(),
+            "mode": self.mode.get(),
+            "draft": self.draft.get(),
+            "editor": self.editor.get(),
+            "dry_run": self.dry_run.get(),
+        }
+        path = self._preferences_path()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(preferences, indent=2) + "\n", encoding="utf-8")
+        except OSError:
+            pass
+
+    def _close(self) -> None:
+        self._save_preferences()
+        self.destroy()
 
     def _load_window_icon(self):
         icon_directories = (
@@ -409,6 +465,7 @@ class CommitPicker(tk.Tk):
         )
         if not confirmed:
             return
+        self._save_preferences()
         command = self._build_command(selected)
         self._append_output("$ " + " ".join(command) + "\n")
         self.run_button.configure(state="disabled")
