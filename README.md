@@ -17,6 +17,12 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
   - Opens the configured editor before GitHub CLI submission with `--editor` (or `--edit`).
   - Applies commits to the cherry-pick branch without pushing or creating a PR, with `--dry-run`.
 
+This is useful when your development branch contains many local commits but you
+need to send only one or more specific changes upstream. For example, a bug
+fix discovered during development can be selected from the same branch,
+cherry-picked onto a clean temporary branch, and submitted as a focused pull
+request without including unrelated work.
+
 ## Prerequisites
 
 - Python 3.6+
@@ -28,7 +34,8 @@ create a feature branch, and generate a structured Pull Request (PR) automatical
 
 For a globally available command-line application, use **pipx**. It keeps the
 application isolated from the system Python and avoids externally managed
-Python restrictions.
+Python restrictions. The recommended installation pulls the tool directly from
+GitHub.
 
 On Ubuntu or Debian:
 
@@ -36,7 +43,7 @@ On Ubuntu or Debian:
 sudo apt update
 sudo apt install pipx
 pipx ensurepath
-pipx install .
+pipx install git+https://github.com/jplcz/git-cp-pr.git
 ```
 
 On macOS with Homebrew:
@@ -44,7 +51,14 @@ On macOS with Homebrew:
 ```bash
 brew install pipx
 pipx ensurepath
-pipx install .
+pipx install git+https://github.com/jplcz/git-cp-pr.git
+```
+
+On BSD, install `pipx` using the operating system's package manager, then run:
+
+```bash
+pipx ensurepath
+pipx install git+https://github.com/jplcz/git-cp-pr.git
 ```
 
 On Windows PowerShell:
@@ -52,10 +66,22 @@ On Windows PowerShell:
 ```powershell
 py -m pip install --user pipx
 py -m pipx ensurepath
-pipx install .
+pipx install git+https://github.com/jplcz/git-cp-pr.git
 ```
 
 Open a new terminal after `ensurepath` if the `pipx` command is not found.
+
+To install from a local checkout instead, clone the repository and install it
+from that directory:
+
+```bash
+git clone https://github.com/jplcz/git-cp-pr.git
+cd git-cp-pr
+pipx install .
+```
+
+On Windows PowerShell, use the same `git clone`, `cd`, and `pipx install .`
+commands.
 
 For development or a project-local installation, use a virtual environment.
 This also works on systems where `pipx` is unavailable.
@@ -86,12 +112,15 @@ From the project directory, first update the source code:
 git pull
 ```
 
-For an installation created with `pipx install .`, reinstall from the updated
-checkout:
+For an installation created directly from GitHub, reinstall from the updated
+repository:
 
 ```bash
-pipx install --force .
+pipx install --force git+https://github.com/jplcz/git-cp-pr.git
 ```
+
+For an installation created from a local checkout, run `pipx install --force .`
+from that checkout.
 
 If the package was installed from a package index instead, use:
 
