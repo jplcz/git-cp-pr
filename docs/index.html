@@ -61,6 +61,34 @@
         <p>The tool prepares a separate cherry-pick branch from selected commits, then either creates a pull request or writes its details to Markdown.</p>
         <p>Use it when your development branch contains many local commits but you need to send only one or more specific changes upstream. For example, a bug fix discovered during development can be selected from the same branch, cherry-picked onto a clean temporary branch, and submitted as a specific pull request without including unrelated work.</p>
       </div>
+      <div class="use-case-graphic" aria-label="Use case: select commits from a busy development branch and create a focused pull request">
+        <div class="use-case-stage">
+          <span class="use-case-label">Development branch</span>
+          <div class="commit-line">
+            <span class="commit-dot commit-muted"></span>
+            <span class="commit-dot commit-selected"></span>
+            <span class="commit-dot commit-muted"></span>
+            <span class="commit-dot commit-selected"></span>
+            <span class="commit-dot commit-muted"></span>
+          </div>
+          <p>Many local commits</p>
+        </div>
+        <span class="use-case-arrow" aria-hidden="true">→</span>
+        <div class="use-case-stage use-case-stage-selected">
+          <span class="use-case-label">Selected commits</span>
+          <div class="commit-line">
+            <span class="commit-dot commit-selected"></span>
+            <span class="commit-dot commit-selected"></span>
+          </div>
+          <p>Bug fix or specific change</p>
+        </div>
+        <span class="use-case-arrow" aria-hidden="true">→</span>
+        <div class="use-case-stage use-case-stage-result">
+          <span class="use-case-label">Upstream PR</span>
+          <div class="pr-line"><span>cherry-pick branch</span><strong>Ready to review</strong></div>
+          <p>Clean change without unrelated work</p>
+        </div>
+      </div>
       <div class="feature-grid">
         <article class="feature-card feature-card-dark">
           <span class="card-index">01</span>
