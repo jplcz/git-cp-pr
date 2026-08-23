@@ -8,7 +8,7 @@ import sys
 import time
 from typing import List, Dict, Sequence, Tuple
 
-__version__ = "1.0.10"
+__version__ = "1.0.11"
 
 class Color:
     # Use ANSI codes, checking if terminal supports color (enabled by default)
