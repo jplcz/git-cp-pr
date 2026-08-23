@@ -314,7 +314,7 @@ class CommitPicker(tk.Tk):
     def _build_ui(self) -> None:
         self.columnconfigure(0, weight=1)
         self.rowconfigure(2, weight=1)
-        self.rowconfigure(4, weight=1)
+        self.rowconfigure(5, weight=1)
 
         header = ttk.Frame(self, style="Header.TFrame", padding=(20, 16))
         header.grid(row=0, column=0, sticky="ew")
@@ -365,15 +365,20 @@ class CommitPicker(tk.Tk):
         clear_button.pack(side="left", padx=(8, 0))
         help_button = ttk.Button(toolbar, text=self._tr("Help"), command=self._show_help)
         help_button.pack(side="left", padx=(8, 0))
-        ttk.Label(toolbar, text=self._tr("Search commits:")).pack(side="left", padx=(20, 6))
-        search_entry = ttk.Entry(toolbar, textvariable=self.search_query, width=28)
-        search_entry.pack(side="left")
-        search_entry.bind("<Return>", lambda _event: self._start_commit_search())
-        regex_check = ttk.Checkbutton(toolbar, text=self._tr("Regexp"), variable=self.search_regex)
-        regex_check.pack(side="left", padx=(6, 0))
-        search_button = ttk.Button(toolbar, text=self._tr("Search"), command=self._start_commit_search)
-        search_button.pack(side="left", padx=(6, 0))
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
+
+        search_toolbar = ttk.Frame(self, padding=(12, 0, 12, 8))
+        search_toolbar.grid(row=4, column=0, sticky="ew")
+        ttk.Label(search_toolbar, text=self._tr("Search commits:")).pack(side="left", padx=(0, 6))
+        search_entry = ttk.Entry(search_toolbar, textvariable=self.search_query, width=28)
+        search_entry.pack(side="left", fill="x", expand=True)
+        search_entry.bind("<Return>", lambda _event: self._start_commit_search())
+        regex_check = ttk.Checkbutton(search_toolbar, text=self._tr("Regexp"), variable=self.search_regex)
+        regex_check.pack(side="left", padx=(6, 0))
+        search_button = ttk.Button(search_toolbar, text=self._tr("Search"), command=self._start_commit_search)
+        search_button.pack(side="left", padx=(6, 0))
+        clear_search_button = ttk.Button(search_toolbar, text=self._tr("Clear search"), command=self._clear_search)
+        clear_search_button.pack(side="left", padx=(6, 0))
 
         tree_frame = ttk.Frame(self, padding=(12, 0, 12, 8))
         tree_frame.grid(row=2, column=0, sticky="nsew")
@@ -414,9 +419,10 @@ class CommitPicker(tk.Tk):
         Tooltip(select_all_button, self._tr("Select every commit currently displayed."))
         Tooltip(clear_button, self._tr("Clear all commit selections."))
         Tooltip(help_button, self._tr("Show an explanation of the GUI workflow and branch scopes."))
-        Tooltip(search_entry, self._tr("Search loaded commits by subject, author, hash, or date."))
+        Tooltip(search_entry, self._tr("Search loaded commits by subject, description, author, hash, or date."))
         Tooltip(regex_check, self._tr("Treat the search text as a regular expression."))
         Tooltip(search_button, self._tr("Search the complete displayed history."))
+        Tooltip(clear_search_button, self._tr("Clear the search and show all loaded commits."))
         Tooltip(self.tree, self._tr("Click the Pick checkbox to select or deselect a commit for cherry-picking."))
         Tooltip(all_branches_check, self._tr("Only expands the displayed Git tree to local and remote branches. It does not select or add commits to the cherry-pick."))
         Tooltip(update_base_check, self._tr("Pull the selected PR base branch before cherry-picking."))
@@ -426,7 +432,7 @@ class CommitPicker(tk.Tk):
         Tooltip(dry_run_check, self._tr("Create the new branch only. Do not cherry-pick commits or push anything."))
 
         self.bottom_tabs = ttk.Notebook(self)
-        self.bottom_tabs.grid(row=4, column=0, sticky="nsew", padx=12, pady=(0, 8))
+        self.bottom_tabs.grid(row=5, column=0, sticky="nsew", padx=12, pady=(0, 8))
 
         preview_frame = ttk.Frame(self.bottom_tabs, padding=8)
         self.bottom_tabs.add(preview_frame, text=self._tr("Diff preview"))
@@ -462,7 +468,7 @@ class CommitPicker(tk.Tk):
         self.output.configure(yscrollcommand=output_scrollbar.set)
 
         footer = ttk.Frame(self, padding=(12, 0, 12, 12))
-        footer.grid(row=5, column=0, sticky="ew")
+        footer.grid(row=6, column=0, sticky="ew")
         footer_details = ttk.Frame(footer)
         footer_details.pack(side="left", fill="x", expand=True, padx=(0, 16))
         warning_label = ttk.Label(
@@ -554,10 +560,12 @@ class CommitPicker(tk.Tk):
         self.loading_commits = True
         try:
             page = self.commit_loader.load_next()
+            descriptions = self._load_commit_descriptions(page)
             for commit in page:
                 commit_hash = commit["hash"]
                 if commit_hash in self.commits:
                     continue
+                commit["description"] = descriptions.get(commit_hash, "")
                 self.commits[commit_hash] = commit
                 if self.search_pattern is None or self._commit_matches(commit):
                     self._insert_commit(commit)
@@ -567,6 +575,23 @@ class CommitPicker(tk.Tk):
             messagebox.showerror(self._tr("Unable to load commits"), str(error))
         finally:
             self.loading_commits = False
+
+    def _load_commit_descriptions(self, commits: List[Dict[str, str]]) -> Dict[str, str]:
+        if not commits:
+            return {}
+        raw = self._git(
+            "log",
+            "--no-walk",
+            "--format=%H\x1f%B\x1e",
+            *(commit["hash"] for commit in commits),
+        )
+        descriptions: Dict[str, str] = {}
+        for record in raw.split("\x1e"):
+            if "\x1f" not in record:
+                continue
+            commit_hash, description = record.split("\x1f", 1)
+            descriptions[commit_hash.strip()] = description.strip()
+        return descriptions
 
     def _tree_yview(self, *args: str) -> None:
         self.tree.yview(*args)
@@ -588,7 +613,7 @@ class CommitPicker(tk.Tk):
         )
 
     def _commit_matches(self, commit: Dict[str, str]) -> bool:
-        searchable = " ".join(commit[field] for field in ("hash", "short", "date", "author", "subject"))
+        searchable = " ".join(commit[field] for field in ("hash", "short", "date", "author", "subject", "description"))
         return self.search_pattern.search(searchable) is not None if self.search_pattern else True
 
     def _start_commit_search(self) -> None:
@@ -613,6 +638,10 @@ class CommitPicker(tk.Tk):
                 self._insert_commit(commit)
         self.status.set(self._tr("Searching commits..."))
         self.after_idle(self._continue_commit_search)
+
+    def _clear_search(self) -> None:
+        self.search_query.set("")
+        self._start_commit_search()
 
     def _continue_commit_search(self) -> None:
         if not self.searching:

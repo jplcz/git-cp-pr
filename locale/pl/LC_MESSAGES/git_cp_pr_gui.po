@@ -68,6 +68,9 @@ msgstr "Wyrażenie regularne"
 msgid "Search"
 msgstr "Szukaj"
 
+msgid "Clear search"
+msgstr "Wyczyść wyszukiwanie"
+
 msgid "Language:"
 msgstr "Język:"
 
@@ -200,14 +203,17 @@ msgstr "Wyczyść wszystkie zaznaczenia commitów."
 msgid "Show an explanation of the GUI workflow and branch scopes."
 msgstr "Pokaż wyjaśnienie workflow GUI i zakresów gałęzi."
 
-msgid "Search loaded commits by subject, author, hash, or date."
-msgstr "Szukaj w commitach po temacie, autorze, skrócie lub dacie."
+msgid "Search loaded commits by subject, description, author, hash, or date."
+msgstr "Szukaj w commitach po temacie, opisie, autorze, skrócie lub dacie."
 
 msgid "Treat the search text as a regular expression."
 msgstr "Traktuj tekst wyszukiwania jako wyrażenie regularne."
 
 msgid "Search the complete displayed history."
 msgstr "Przeszukaj całą wyświetlaną historię."
+
+msgid "Clear the search and show all loaded commits."
+msgstr "Wyczyść wyszukiwanie i pokaż wszystkie wczytane commity."
 
 msgid "Click the Pick checkbox to select or deselect a commit for cherry-picking."
 msgstr "Kliknij checkbox w kolumnie Pick, aby zaznaczyć commit do cherry-pick."
