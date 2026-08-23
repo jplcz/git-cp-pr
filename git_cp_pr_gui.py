@@ -17,10 +17,11 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Dict, List, Optional, Tuple
 
+from commit_tree import CommitTree
 from git_cp_pr import __version__
+from progressive_commit_loader import ProgressiveCommitLoader
 
 
-COMMIT_SEPARATOR = "\x1f"
 PROJECT_PAGE_URL = "https://jplcz.github.io/git-cp-pr/"
 SUPPORTED_LANGUAGES = ("en", "pl")
 GETTEXT_DOMAIN = "git_cp_pr_gui"
@@ -37,19 +38,6 @@ class PoFileTranslations(gettext.NullTranslations):
 
     def gettext(self, message: str) -> str:
         return self.catalog.get(message, message)
-COMMIT_PATTERN = re.compile(
-    r"^(?P<graph>[ |\\/*]+)?(?P<hash>[0-9a-f]{40})"
-    + re.escape(COMMIT_SEPARATOR)
-    + r"(?P<short>[0-9a-f]+)"
-    + re.escape(COMMIT_SEPARATOR)
-    + r"(?P<date>[^\x1f]*)"
-    + re.escape(COMMIT_SEPARATOR)
-    + r"(?P<author>[^\x1f]*)"
-    + re.escape(COMMIT_SEPARATOR)
-    + r"(?P<subject>.*)$"
-)
-
-
 class Tooltip:
     def __init__(self, widget: tk.Widget, text: str) -> None:
         self.widget = widget
@@ -103,6 +91,8 @@ class CommitPicker(tk.Tk):
         self.geometry("1100x720")
         self.minsize(800, 520)
         self.repo_dir = Path.cwd()
+        self.commit_loader = ProgressiveCommitLoader(self._git, page_size=200)
+        self.loading_commits = False
         self._window_icon = self._load_window_icon()
         self.cli_script = Path(__file__).resolve().with_name("git_cp_pr.py")
         self.commits: Dict[str, Dict[str, str]] = {}
@@ -377,11 +367,10 @@ class CommitPicker(tk.Tk):
         tree_frame.grid(row=2, column=0, sticky="nsew")
         tree_frame.columnconfigure(0, weight=1)
         tree_frame.rowconfigure(0, weight=1)
-        self.tree = ttk.Treeview(
+        self.tree = CommitTree(
             tree_frame,
             columns=("selected", "graph", "hash", "date", "author", "subject"),
-            show="headings",
-            selectmode="browse",
+            background="#fffdf8",
         )
         headings = {
             "selected": self._tr("Pick"),
@@ -396,11 +385,14 @@ class CommitPicker(tk.Tk):
             self.tree.heading(column, text=heading)
             self.tree.column(column, width=widths[column], anchor="w", stretch=column == "subject")
         self.tree.grid(row=0, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree_yview)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scrollbar.set)
         self.tree.tag_configure("picked", background="#e0efe8", foreground="#173b4d")
         self.tree.bind("<Button-1>", self._toggle_row)
+        self.tree.bind("<MouseWheel>", self._on_tree_scroll, add="+")
+        self.tree.bind("<Button-4>", self._on_tree_scroll, add="+")
+        self.tree.bind("<Button-5>", self._on_tree_scroll, add="+")
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
         Tooltip(base_label, self._tr("Branch the new PR will target. This is not the history currently displayed."))
         Tooltip(self.base_combo, self._tr("Select the base branch used by the cherry-pick command and PR."))
@@ -531,35 +523,48 @@ class CommitPicker(tk.Tk):
             messagebox.showerror(self._tr("Unable to load repository"), str(error))
 
     def _load_commits(self) -> None:
-        log_args = ["log"]
-        if self.all_branches.get():
-            log_args.extend(["--branches", "--remotes"])
-        log_args.extend([
-            "--date=short",
-            "--graph",
-            "--decorate",
-            "--pretty=format:%H" + COMMIT_SEPARATOR + "%h" + COMMIT_SEPARATOR + "%ad" + COMMIT_SEPARATOR + "%an" + COMMIT_SEPARATOR + "%s",
-        ])
-        raw = self._git(*log_args)
         self.tree.delete(*self.tree.get_children())
         self.commits.clear()
         self.commit_diffs.clear()
-        for line in raw.splitlines():
-            match = COMMIT_PATTERN.match(line)
-            if not match:
-                continue
-            commit = match.groupdict()
-            commit_hash = commit["hash"]
-            self.commits[commit_hash] = commit
-            self.tree.insert(
-                "",
-                "end",
-                iid=commit_hash,
-                values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
-            )
+        self.commit_loader.reset(self.all_branches.get())
+        self._load_next_commits()
         self._set_diff_preview_text(self._tr("Select a commit checkbox to preview its diff") + "\n")
         self.diff_status.set(self._tr("Select a commit checkbox to preview its diff"))
-        self.status.set(self._tr("{count} commits loaded", count=len(self.commits)))
+
+    def _load_next_commits(self) -> None:
+        if self.loading_commits or self.commit_loader.exhausted:
+            return
+        self.loading_commits = True
+        try:
+            page = self.commit_loader.load_next()
+            for commit in page:
+                commit_hash = commit["hash"]
+                if commit_hash in self.commits:
+                    continue
+                self.commits[commit_hash] = commit
+                self.tree.insert(
+                    "",
+                    "end",
+                    iid=commit_hash,
+                    values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
+                )
+            self.status.set(self._tr("{count} commits loaded", count=len(self.commits)))
+        except (OSError, RuntimeError) as error:
+            self.status.set(self._tr("Repository unavailable"))
+            messagebox.showerror(self._tr("Unable to load commits"), str(error))
+        finally:
+            self.loading_commits = False
+
+    def _tree_yview(self, *args: str) -> None:
+        self.tree.yview(*args)
+        self.after_idle(self._load_more_if_needed)
+
+    def _on_tree_scroll(self, _event: tk.Event) -> None:
+        self.after_idle(self._load_more_if_needed)
+
+    def _load_more_if_needed(self) -> None:
+        if self.tree.yview()[1] >= 0.95:
+            self._load_next_commits()
 
     def _show_help(self) -> None:
         messagebox.showinfo(
@@ -574,9 +579,10 @@ class CommitPicker(tk.Tk):
         row = self.tree.identify_row(event.y)
         if not row:
             return None
+        self.tree.selection_set(row)
         column = self.tree.identify_column(event.x)
         if column != "#1":
-            return None
+            return "break"
         values = list(self.tree.item(row, "values"))
         values[0] = "☑" if values[0] == "☐" else "☐"
         self.tree.item(row, values=values, tags=("picked",) if values[0] == "☑" else ())
