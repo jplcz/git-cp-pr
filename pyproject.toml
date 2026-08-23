@@ -26,6 +26,7 @@ py-modules = ["git_cp_pr", "git_cp_pr_gui"]
 
 [tool.setuptools.data-files]
 "share/git-cp-pr" = ["icon.png", "icon.ico"]
+"share/git-cp-pr/locale/pl/LC_MESSAGES" = ["locale/pl/LC_MESSAGES/git_cp_pr_gui.po"]
 
 [tool.setuptools.dynamic]
 version = { attr = "git_cp_pr.__version__" }

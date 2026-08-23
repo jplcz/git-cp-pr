@@ -24,7 +24,10 @@ COMMIT_SEPARATOR = "\x1f"
 PROJECT_PAGE_URL = "https://jplcz.github.io/git-cp-pr/"
 SUPPORTED_LANGUAGES = ("en", "pl")
 GETTEXT_DOMAIN = "git_cp_pr_gui"
-LOCALE_DIR = Path(__file__).resolve().with_name("locale")
+LOCALE_DIRS = (
+    Path(__file__).resolve().with_name("locale"),
+    Path(sys.prefix) / "share" / "git-cp-pr" / "locale",
+)
 
 
 class PoFileTranslations(gettext.NullTranslations):
@@ -171,10 +174,17 @@ class CommitPicker(tk.Tk):
 
     def _load_translations(self) -> None:
         language = self._normalize_language(self.language.get())
-        language_po = LOCALE_DIR / language / "LC_MESSAGES" / f"{GETTEXT_DOMAIN}.po"
+        language_po = next(
+            (
+                locale_dir / language / "LC_MESSAGES" / f"{GETTEXT_DOMAIN}.po"
+                for locale_dir in LOCALE_DIRS
+                if (locale_dir / language / "LC_MESSAGES" / f"{GETTEXT_DOMAIN}.po").is_file()
+            ),
+            None,
+        )
 
         try:
-            if language == "en" or not language_po.is_file():
+            if language == "en" or language_po is None:
                 self.translations = gettext.NullTranslations()
             else:
                 self.translations = PoFileTranslations(self._parse_po_file(language_po))
