@@ -106,31 +106,65 @@
       <div class="section-heading compact-heading">
         <p class="eyebrow">Installation</p>
         <h2>Install and run from a repository</h2>
-        <p>Clone the repository, then use pipx to install the command in an isolated environment.</p>
+        <p>Choose a direct Git installation or install from a local clone.</p>
       </div>
-      <div class="command-example clone-example">
-        <span class="command-tag">1 · CLONE</span>
-        <code id="clone-command">git clone https://github.com/jplcz/git-cp-pr.git &amp;&amp; cd git-cp-pr</code>
-        <button class="copy-button" type="button" data-copy-target="clone-command">Copy</button>
-        <span class="copy-status" aria-live="polite"></span>
-      </div>
-      <div class="install-grid">
-        <div class="install-card">
-          <span class="platform">2 · macOS / Linux</span>
-          <pre><code>python3 -m pip install --user pipx
+      <div class="install-tabs" data-tabs>
+        <div class="tab-list" role="tablist" aria-label="Installation method">
+          <button class="tab-button is-active" id="install-git-tab" type="button" role="tab" aria-selected="true" aria-controls="install-git-panel" tabindex="0">Install from GitHub directly</button>
+          <button class="tab-button" id="install-clone-tab" type="button" role="tab" aria-selected="false" aria-controls="install-clone-panel" tabindex="-1">Install from cloned sources</button>
+        </div>
+        <div class="tab-panel" id="install-git-panel" role="tabpanel" aria-labelledby="install-git-tab">
+          <div class="install-grid">
+            <div class="install-card">
+              <span class="platform">macOS / Linux / BSD</span>
+              <pre><code id="install-git-unix">python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install git+https://github.com/jplcz/git-cp-pr.git</code></pre>
+              <button class="copy-button" type="button" data-copy-target="install-git-unix">Copy</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </div>
+            <div class="install-card">
+              <span class="platform">Windows PowerShell</span>
+              <pre><code id="install-git-windows">py -m pip install --user pipx
+py -m pipx ensurepath
+pipx install git+https://github.com/jplcz/git-cp-pr.git</code></pre>
+              <button class="copy-button" type="button" data-copy-target="install-git-windows">Copy</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="install-clone-panel" role="tabpanel" aria-labelledby="install-clone-tab" hidden>
+          <div class="command-example clone-example">
+            <span class="command-tag">1 · CLONE</span>
+            <code id="clone-command">git clone https://github.com/jplcz/git-cp-pr.git &amp;&amp; cd git-cp-pr</code>
+            <button class="copy-button" type="button" data-copy-target="clone-command">Copy</button>
+            <span class="copy-status" aria-live="polite"></span>
+          </div>
+          <div class="install-grid">
+            <div class="install-card">
+              <span class="platform">macOS / Linux / BSD</span>
+              <pre><code id="install-clone-unix">python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 pipx install .</code></pre>
-        </div>
-        <div class="install-card">
-          <span class="platform">2 · Windows PowerShell</span>
-          <pre><code>py -m pip install --user pipx
+              <button class="copy-button" type="button" data-copy-target="install-clone-unix">Copy</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </div>
+            <div class="install-card">
+              <span class="platform">Windows PowerShell</span>
+              <pre><code id="install-clone-windows">py -m pip install --user pipx
 py -m pipx ensurepath
 pipx install .</code></pre>
+              <button class="copy-button" type="button" data-copy-target="install-clone-windows">Copy</button>
+              <span class="copy-status" aria-live="polite"></span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="command-example">
         <span class="command-tag">TRY IT</span>
-        <code>cd your-repository &amp;&amp; git cp-pr --dry-run abc1234</code>
+        <code id="try-command">cd your-repository &amp;&amp; git cp-pr --dry-run abc1234</code>
+        <button class="copy-button" type="button" data-copy-target="try-command">Copy</button>
+        <span class="copy-status" aria-live="polite"></span>
       </div>
     </section>
   </main>
@@ -141,6 +175,26 @@ pipx install .</code></pre>
     <a href="https://github.com/jplcz/git-cp-pr/blob/master/README.md">Documentation ↗</a>
   </footer>
   <script>
+    document.querySelectorAll("[data-tabs]").forEach(function (tabs) {
+      var tabButtons = Array.from(tabs.querySelectorAll('[role="tab"]'));
+      tabButtons.forEach(function (button, index) {
+        button.addEventListener("click", function () {
+          tabButtons.forEach(function (tab) {
+            var selected = tab === button;
+            tab.classList.toggle("is-active", selected);
+            tab.setAttribute("aria-selected", selected);
+            tab.tabIndex = selected ? 0 : -1;
+            document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+          });
+        });
+        button.addEventListener("keydown", function (event) {
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          tabButtons[(index + (event.key === "ArrowRight" ? 1 : -1) + tabButtons.length) % tabButtons.length].focus();
+        });
+      });
+    });
+
     document.querySelectorAll("[data-copy-target]").forEach(function (button) {
       button.addEventListener("click", function () {
         var command = document.getElementById(button.dataset.copyTarget).textContent;
