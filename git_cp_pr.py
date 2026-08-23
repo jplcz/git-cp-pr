@@ -2,10 +2,11 @@
 import atexit
 import argparse
 import re
+import shlex
 import subprocess
 import sys
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict, Sequence, Tuple
 
 __version__ = "1.0.10"
 
@@ -23,11 +24,12 @@ def print_status(emoji: str, message: str, color: str = Color.BLUE) -> None:
     """Prints a formatted, emoji-prefixed status message with colors."""
     print(f"{color}{emoji} {message}{Color.RESET}")
 
-def run_command(cmd: str, check: bool = True) -> str:
-    """Runs a shell command safely and captures output."""
-    result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
+def run_command(cmd: Sequence[str], check: bool = True) -> str:
+    """Runs a command without a shell and captures output."""
+    result = subprocess.run(cmd, text=True, capture_output=True)
     if check and result.returncode != 0:
-        print_status("❌", f"Command failed: {cmd}\nError: {result.stderr.strip()}", Color.RED)
+        command_text = shlex.join(cmd) if sys.version_info >= (3, 8) else " ".join(shlex.quote(arg) for arg in cmd)
+        print_status("❌", f"Command failed: {command_text}\nError: {result.stderr.strip()}", Color.RED)
         sys.exit(1)
     return result.stdout.strip()
 
@@ -43,8 +45,8 @@ class CommitFormatter:
 
     def _load_commits(self) -> None:
         for h in self.commit_hashes:
-            subject = run_command(f"git log -1 --pretty=%s {h}")
-            raw_body = run_command(f"git log -1 --pretty=%b {h}")
+            subject = run_command(["git", "log", "-1", "--pretty=%s", h])
+            raw_body = run_command(["git", "log", "-1", "--pretty=%b", h])
             
             # Clean and parse metadata
             cleaned_body, trailers = self._extract_and_clean_body(raw_body)
@@ -156,7 +158,7 @@ def main():
         print_status("❌", "Current directory is not a valid Git repository.", Color.RED)
         sys.exit(1)
 
-    original_branch = run_command("git branch --show-current", check=False)
+    original_branch = run_command(["git", "branch", "--show-current"], check=False)
     branch_created = False
     remove_branch_on_exit = False
 
@@ -181,11 +183,11 @@ def main():
     atexit.register(restore_original_branch)
 
     print_status("🔍", f"Checking out base branch '{args.base}'...")
-    run_command(f"git checkout {args.base}")
+    run_command(["git", "checkout", args.base])
 
     if args.update_base:
         print_status("🔄", f"Updating base branch '{args.base}' from remote...")
-        run_command(f"git pull origin {args.base}")
+        run_command(["git", "pull", "origin", args.base])
     else:
         print_status("⏭️", f"Skipping update of base branch '{args.base}' as requested.", Color.YELLOW)
 
@@ -194,12 +196,12 @@ def main():
     for c in args.commits:
         # If it's a range (contains '..'), expand it
         if ".." in c:
-            rev_list = run_command(f"git rev-list --reverse {c}")
+            rev_list = run_command(["git", "rev-list", "--reverse", c])
             if rev_list:
                 expanded_commits.extend([line.strip() for line in rev_list.splitlines() if line.strip()])
         else:
             # Otherwise, treat it as a single commit or ref, get its full hash
-            full_hash = run_command(f"git rev-parse --verify {c}")
+            full_hash = run_command(["git", "rev-parse", "--verify", c])
             if full_hash:
                 expanded_commits.append(full_hash)
 
@@ -219,7 +221,7 @@ def main():
         custom_branch = f"cherry-pick-{clean_name}-{int(time.time())}"
 
     print_status("🌿", f"Creating and switching to branch '{custom_branch}'...")
-    run_command(f"git checkout -b {custom_branch}")
+    run_command(["git", "checkout", "-b", custom_branch])
     branch_created = True
     remove_branch_on_exit = True
 
@@ -237,7 +239,7 @@ def main():
         return
 
     print_status("🚀", "Pushing branch to remote origin...")
-    run_command(f"git push -u origin {custom_branch}")
+    run_command(["git", "push", "-u", "origin", custom_branch])
 
     # Format the PR using cleaned commit bodies and merged trailers.
     formatter = CommitFormatter(expanded_commits, args.base, custom_branch)
