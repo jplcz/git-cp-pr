@@ -15,7 +15,7 @@ msgid "Loading..."
 msgstr "Ładowanie..."
 
 msgid "Cherry-pick workspace"
-msgstr "Obszar cherry-pick"
+msgstr "Narzędzie cherry-pick"
 
 msgid "PR base (target)"
 msgstr "Baza PR (cel)"
