@@ -22,7 +22,7 @@ git-cp-pr = "git_cp_pr:main"
 git-cp-pr-gui = "git_cp_pr_gui:main"
 
 [tool.setuptools]
-py-modules = ["git_cp_pr", "git_cp_pr_gui"]
+py-modules = ["commit_tree", "git_cp_pr", "git_cp_pr_gui", "progressive_commit_loader"]
 
 [tool.setuptools.data-files]
 "share/git-cp-pr" = ["icon.png", "icon.ico"]
