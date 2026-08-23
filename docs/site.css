@@ -85,13 +85,12 @@ h3 { margin-bottom: 11px; font-size: 1.25rem; line-height: 1.15; }
 .use-case-stage-result { color: var(--paper); border-color: var(--ink); background: var(--ink); }
 .use-case-label { display: block; margin-bottom: 22px; color: var(--orange-deep); font: 700 .78rem var(--mono); text-transform: uppercase; }
 .use-case-stage-result .use-case-label { color: #f1a17e; }
-.commit-line { display: flex; align-items: center; gap: 10px; min-height: 22px; margin-bottom: 17px; }
-.commit-line::before { content: ""; position: absolute; width: 0; }
-.commit-dot { width: 17px; height: 17px; display: block; border-radius: 50%; background: var(--line); box-shadow: 0 0 0 4px var(--paper); }
-.commit-line { position: relative; }
-.commit-line::after { content: ""; position: absolute; z-index: 0; left: 8px; right: 8px; height: 2px; background: var(--line); }
-.commit-dot { position: relative; z-index: 1; }
-.commit-selected { background: var(--orange); }
+.commit-tree { display: block; width: 100%; height: 70px; margin-bottom: 17px; overflow: visible; }
+.tree-line { fill: none; stroke: var(--line); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.tree-line-selected { stroke: var(--orange); }
+.commit-node { stroke: var(--paper); stroke-width: 4; }
+.commit-muted { fill: var(--line); }
+.commit-selected { fill: var(--orange); }
 .use-case-stage p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.35; }
 .use-case-stage-result p { color: #c5d4d5; }
 .use-case-arrow { color: var(--orange); font: 700 1.5rem var(--mono); }

@@ -64,22 +64,24 @@
       <div class="use-case-graphic" aria-label="Use case: select commits from a busy development branch and create a focused pull request">
         <div class="use-case-stage">
           <span class="use-case-label">Development branch</span>
-          <div class="commit-line">
-            <span class="commit-dot commit-muted"></span>
-            <span class="commit-dot commit-selected"></span>
-            <span class="commit-dot commit-muted"></span>
-            <span class="commit-dot commit-selected"></span>
-            <span class="commit-dot commit-muted"></span>
-          </div>
+          <svg class="commit-tree" viewBox="0 0 240 70" role="img" aria-label="Development branch with unrelated and selected commits">
+            <path class="tree-line" d="M20 25H220M86 25V52H160" />
+            <circle class="commit-node commit-muted" cx="20" cy="25" r="8" />
+            <circle class="commit-node commit-selected" cx="86" cy="25" r="8" />
+            <circle class="commit-node commit-muted" cx="120" cy="25" r="8" />
+            <circle class="commit-node commit-selected" cx="160" cy="52" r="8" />
+            <circle class="commit-node commit-muted" cx="220" cy="25" r="8" />
+          </svg>
           <p>Many local commits</p>
         </div>
         <span class="use-case-arrow" aria-hidden="true">→</span>
         <div class="use-case-stage use-case-stage-selected">
           <span class="use-case-label">Selected commits</span>
-          <div class="commit-line">
-            <span class="commit-dot commit-selected"></span>
-            <span class="commit-dot commit-selected"></span>
-          </div>
+          <svg class="commit-tree" viewBox="0 0 240 70" role="img" aria-label="Two selected commits on a new branch">
+            <path class="tree-line tree-line-selected" d="M48 35H192" />
+            <circle class="commit-node commit-selected" cx="48" cy="35" r="9" />
+            <circle class="commit-node commit-selected" cx="192" cy="35" r="9" />
+          </svg>
           <p>Bug fix or specific change</p>
         </div>
         <span class="use-case-arrow" aria-hidden="true">→</span>
