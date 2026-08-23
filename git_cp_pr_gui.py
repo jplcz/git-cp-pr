@@ -15,7 +15,7 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Pattern, Tuple
 
 from commit_tree import CommitTree
 from git_cp_pr import __version__
@@ -107,6 +107,10 @@ class CommitPicker(tk.Tk):
         self.mode = tk.StringVar(value="gh")
         self.draft = tk.BooleanVar()
         self.dry_run = tk.BooleanVar()
+        self.search_query = tk.StringVar()
+        self.search_regex = tk.BooleanVar()
+        self.search_pattern: Optional[Pattern[str]] = None
+        self.searching = False
         self.displayed_history = tk.StringVar(value=self._tr("Loading..."))
         self.status = tk.StringVar(value=self._tr("Loading commits..."))
         self.diff_status = tk.StringVar(value=self._tr("Select a commit checkbox to preview its diff"))
@@ -361,6 +365,14 @@ class CommitPicker(tk.Tk):
         clear_button.pack(side="left", padx=(8, 0))
         help_button = ttk.Button(toolbar, text=self._tr("Help"), command=self._show_help)
         help_button.pack(side="left", padx=(8, 0))
+        ttk.Label(toolbar, text=self._tr("Search commits:")).pack(side="left", padx=(20, 6))
+        search_entry = ttk.Entry(toolbar, textvariable=self.search_query, width=28)
+        search_entry.pack(side="left")
+        search_entry.bind("<Return>", lambda _event: self._start_commit_search())
+        regex_check = ttk.Checkbutton(toolbar, text=self._tr("Regexp"), variable=self.search_regex)
+        regex_check.pack(side="left", padx=(6, 0))
+        search_button = ttk.Button(toolbar, text=self._tr("Search"), command=self._start_commit_search)
+        search_button.pack(side="left", padx=(6, 0))
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
 
         tree_frame = ttk.Frame(self, padding=(12, 0, 12, 8))
@@ -402,6 +414,9 @@ class CommitPicker(tk.Tk):
         Tooltip(select_all_button, self._tr("Select every commit currently displayed."))
         Tooltip(clear_button, self._tr("Clear all commit selections."))
         Tooltip(help_button, self._tr("Show an explanation of the GUI workflow and branch scopes."))
+        Tooltip(search_entry, self._tr("Search loaded commits by subject, author, hash, or date."))
+        Tooltip(regex_check, self._tr("Treat the search text as a regular expression."))
+        Tooltip(search_button, self._tr("Search the complete displayed history."))
         Tooltip(self.tree, self._tr("Click the Pick checkbox to select or deselect a commit for cherry-picking."))
         Tooltip(all_branches_check, self._tr("Only expands the displayed Git tree to local and remote branches. It does not select or add commits to the cherry-pick."))
         Tooltip(update_base_check, self._tr("Pull the selected PR base branch before cherry-picking."))
@@ -523,6 +538,8 @@ class CommitPicker(tk.Tk):
             messagebox.showerror(self._tr("Unable to load repository"), str(error))
 
     def _load_commits(self) -> None:
+        self.searching = False
+        self.search_pattern = None
         self.tree.delete(*self.tree.get_children())
         self.commits.clear()
         self.commit_diffs.clear()
@@ -542,12 +559,8 @@ class CommitPicker(tk.Tk):
                 if commit_hash in self.commits:
                     continue
                 self.commits[commit_hash] = commit
-                self.tree.insert(
-                    "",
-                    "end",
-                    iid=commit_hash,
-                    values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
-                )
+                if self.search_pattern is None or self._commit_matches(commit):
+                    self._insert_commit(commit)
             self.status.set(self._tr("{count} commits loaded", count=len(self.commits)))
         except (OSError, RuntimeError) as error:
             self.status.set(self._tr("Repository unavailable"))
@@ -563,8 +576,53 @@ class CommitPicker(tk.Tk):
         self.after_idle(self._load_more_if_needed)
 
     def _load_more_if_needed(self) -> None:
-        if self.tree.yview()[1] >= 0.95:
+        if not self.searching and self.tree.yview()[1] >= 0.95:
             self._load_next_commits()
+
+    def _insert_commit(self, commit: Dict[str, str]) -> None:
+        self.tree.insert(
+            "",
+            "end",
+            iid=commit["hash"],
+            values=("☐", commit["graph"].strip(), commit["short"], commit["date"], commit["author"], commit["subject"]),
+        )
+
+    def _commit_matches(self, commit: Dict[str, str]) -> bool:
+        searchable = " ".join(commit[field] for field in ("hash", "short", "date", "author", "subject"))
+        return self.search_pattern.search(searchable) is not None if self.search_pattern else True
+
+    def _start_commit_search(self) -> None:
+        query = self.search_query.get()
+        if not query:
+            self.searching = False
+            self.search_pattern = None
+            self.tree.delete(*self.tree.get_children())
+            for commit in self.commits.values():
+                self._insert_commit(commit)
+            self.status.set(self._tr("{count} commits loaded", count=len(self.commits)))
+            return
+        try:
+            self.search_pattern = re.compile(query if self.search_regex.get() else re.escape(query), re.IGNORECASE)
+        except re.error as error:
+            self.status.set(self._tr("Invalid regular expression: {error}", error=str(error)))
+            return
+        self.searching = True
+        self.tree.delete(*self.tree.get_children())
+        for commit in self.commits.values():
+            if self._commit_matches(commit):
+                self._insert_commit(commit)
+        self.status.set(self._tr("Searching commits..."))
+        self.after_idle(self._continue_commit_search)
+
+    def _continue_commit_search(self) -> None:
+        if not self.searching:
+            return
+        if self.commit_loader.exhausted:
+            self.searching = False
+            self.status.set(self._tr("{count} matching commits", count=len(self.tree.get_children())))
+            return
+        self._load_next_commits()
+        self.after(1, self._continue_commit_search)
 
     def _show_help(self) -> None:
         messagebox.showinfo(
