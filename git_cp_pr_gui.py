@@ -23,7 +23,7 @@ from progressive_commit_loader import ProgressiveCommitLoader
 
 
 PROJECT_PAGE_URL = "https://jplcz.github.io/git-cp-pr/"
-SUPPORTED_LANGUAGES = ("en", "pl")
+SUPPORTED_LANGUAGES = ("en", "pl", "ko")
 GETTEXT_DOMAIN = "git_cp_pr_gui"
 LOCALE_DIRS = (
     Path(__file__).resolve().with_name("locale"),

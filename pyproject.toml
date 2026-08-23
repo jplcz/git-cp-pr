@@ -27,6 +27,7 @@ py-modules = ["commit_tree", "git_cp_pr", "git_cp_pr_gui", "progressive_commit_l
 [tool.setuptools.data-files]
 "share/git-cp-pr" = ["icon.png", "icon.ico"]
 "share/git-cp-pr/locale/pl/LC_MESSAGES" = ["locale/pl/LC_MESSAGES/git_cp_pr_gui.po"]
+"share/git-cp-pr/locale/ko/LC_MESSAGES" = ["locale/ko/LC_MESSAGES/git_cp_pr_gui.po"]
 
 [tool.setuptools.dynamic]
 version = { attr = "git_cp_pr.__version__" }
