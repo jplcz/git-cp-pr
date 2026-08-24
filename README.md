@@ -1,5 +1,10 @@
 # Git Cherry-Pick PR tool
 
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](https://unlicense.org/)
+![Python](https://img.shields.io/badge/python-3.6+-blue.svg)
+[![Docs](https://img.shields.io/badge/docs-online-brightgreen)](https://jplcz.github.io/git-cp-pr/)
+[![GitHub Stars](https://img.shields.io/github/stars/jplcz/git-cp-pr?style=social)](https://github.com/jplcz/git-cp-pr)
+
 An automated Python tool to cherry-pick specific commits or commit ranges, 
 create a feature branch, and generate a structured Pull Request (PR) automatically. 
 
